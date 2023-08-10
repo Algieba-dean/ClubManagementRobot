@@ -10,7 +10,6 @@ from threading import Thread
 from wcferry import Wcf, WxMsg
 
 from configuration import Config
-from func_chatgpt import ChatGPT
 from func_chengyu import cy
 from func_news import News
 from func_tigerbot import TigerBot
@@ -27,12 +26,19 @@ class Robot(Job):
         self.LOG = logging.getLogger("Robot")
         self.wxid = self.wcf.get_self_wxid()
         self.allContacts = self.getAllContacts()
+        table = []
+        contacts = self.wcf.query_sql("MicroMsg.db", "SELECT * FROM Contact;")
+        for db in self.wcf.get_dbs():
+            table.append(self.wcf.get_tables(db))
+        ...
+
+        ...
 
         if self.config.TIGERBOT:
             self.chat = TigerBot(self.config.TIGERBOT)
         elif self.config.CHATGPT:
             cgpt = self.config.CHATGPT
-            self.chat = ChatGPT(cgpt.get("key"), cgpt.get("api"), cgpt.get("proxy"), cgpt.get("prompt"))
+            # self.chat = ChatGPT(cgpt.get("key"), cgpt.get("api"), cgpt.get("proxy"), cgpt.get("prompt"))
         else:
             self.chat = None
 

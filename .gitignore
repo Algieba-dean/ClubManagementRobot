@@ -9,4 +9,4 @@ logs/
 *.log
 *.log.*
 
-config.yaml
+PluginClub/config.yaml

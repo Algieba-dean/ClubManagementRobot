@@ -1,25 +1,15 @@
 # WeChatRobot
-一个基于 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 的微信机器人示例。
-
-|[📖 文档](https://wechatferry.readthedocs.io/)|[📺 视频教程](https://mp.weixin.qq.com/s/APdjGyZ2hllXxyG_sNCfXQ)|[🙋 FAQ](https://mp.weixin.qq.com/s/vAGpn1C9stI8Xzt1hUJhLA)|
-|:-:|:-:|:-:|
-
-|![碲矿](https://raw.githubusercontent.com/lich0821/WeChatFerry/master/assets/TEQuant.jpg)|![赞赏](https://raw.githubusercontent.com/lich0821/WeChatFerry/master/assets/QR.jpeg)|
-|:-:|:-:|
-|后台回复 `WeChatFerry` 加群交流|如果你觉得有用|
+基于[WeChatFerry](https://github.com/lich0821/WeChatFerry) 的微信机器人示例。
 
 ## Quick Start
+
 0. 安装 Python，例如 [3.10.11](https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe)
-1. 安装微信 `3.9.2.23`，下载地址在 [这里](https://github.com/lich0821/WeChatFerry/releases/download/v39.0.0/WeChatSetup-3.9.2.23.exe)；也可以从 [WeChatSetup](https://gitee.com/lch0821/WeChatSetup) 找到。
+1. 安装微信 `3.9.2.23`，下载地址在 https://pan.baidu.com/s/1pg3T0jJVZSToCN9em3uLJA?pwd=club
+   提取码：club
 2. 克隆项目
 ```sh
-git clone https://github.com/lich0821/WeChatRobot.git
-
-# 如果网络原因打不开，可以科学上网，或者使用gitee
-git clone https://gitee.com/lch0821/WeChatRobot.git
+git clone https://github.com/Algieba-dean/ClubManagementRobot
 ```
-
-如果觉得克隆复杂，也可以直接下载[最新版](https://github.com/lich0821/WeChatRobot/releases/latest) (打不开试试[这个](https://gitee.com/lch0821/WeChatRobot/releases/latest)) 到本地解压。
 
 3. 安装依赖
 ```sh
@@ -32,32 +22,84 @@ pip install -r requirements.txt
 4. 运行
 
 直接运行程序会自动拉起微信：
+
 ```sh
-python main.py
-# 如果微信未打开，会自动打开微信；如果版本不对，也会有提示；其他报错，请进群交流。
+python bot.py
+# 如果微信未打开，会自动打开微信；如果版本不对，也会有提示；
 ```
 
 ### 修改配置
+
 配置文件 `config.yaml` 是运行程序后自动从模板复制过来的，以下功能默认关闭。
 
 * 为了响应群聊消息，需要添加相应的 `roomId`（打印的消息中方括号里的就是）：
+* 以下xxxx@chatroom即为roomId, 管理员的wxid需要从消息打印中抓，不一定就是微信id
+
 ```yaml
-groups:
-  enable: [] # 允许响应的群 roomId，大概长这样：2xxxxxxxxx3@chatroom
+
+club_activate_groups:
+  {
+    "Abbbbb@chatroom": [ # room_id
+      "wxid_aaaa",             # group managers
+      "wxid_bbbb",
+      "wxid_cccc",
+    ],
 ```
 
-* 为了使用 ChatGPT，需要取消配置中 chatgpt 的注释， 并配置 OpenAI 的 Key（以及代理）：
-```yaml
-# 如果要使用 ChatGPT，取消下面的注释并填写相关内容
-chatgpt:
-  key: 填写你 ChatGPT 的 key
-  api: https://api.openai.com/v1 # 如果你不知道这是干嘛的，就不要改
-  proxy: # 如果你在国内，你可能需要魔法，大概长这样：http://域名或者IP地址:端口号
-  prompt: 你是智能聊天机器人，你叫wcferry # 根据需要对角色进行设定
+### 命令
+
+设计上来讲，参考原作者的功能，给多插件实现留了槽位，原则上是可以实现多个插件共同使用。
+由于目前的消息量不多，暂时未使用异步处理（异步处理更为合理）
+
+#### 以下是可用的命令及格式
+
+```shell
+.发起活动
+活动名称: [小小写作家202308A]
+活动开始时间: [2023-08-13]
+活动结束时间: [2023-08-16]
+活动详情:
+任意内容
 ```
 
-* ~~为了暴露 HTTP 接口，需要取消配置中 http 的注释：~~
+* 该命令用于发起活动
+* 该命令仅限**管理员**使用
+* **活动名称需要唯一**
+* 活动起始时间需要按照给定的格式
+* 其余内容任意
 
-如有需要，推荐使用 [wcfhttp](https://wechatferry.readthedocs.io/zh/latest/?badge=latest)
+```shell
+.打卡
+活动名称: [小小写作家202308A]
+打卡任意内容
+```
 
-[![PyPi](https://img.shields.io/pypi/v/wcfhttp.svg)](https://pypi.python.org/pypi/wcfhttp) [![Downloads](https://static.pepy.tech/badge/wcfhttp)](https://pypi.python.org/pypi/wcfhttp) [![Documentation Status](https://readthedocs.org/projects/wechatferry/badge/?version=latest)](https://wechatferry.readthedocs.io/zh/latest/?badge=latest)
+* 该命令用于参与活动，进行打卡
+* 激活机器人的群里任意成员均可使用
+* **活动名称**一定要指定正确
+* 打卡内容任意
+
+```shell
+.更新活动
+活动名称: [小小写作家202308A]
+活动开始时间: [2023-08-13]
+活动结束时间: [2023-08-16]
+活动详情:
+任意内容
+```
+
+* 该命令用于修改发起活动,避免有时候设置错误活动时间
+* 该命令仅限**管理员**使用
+* **活动名称需要设置正确**
+* 活动起始时间需要按照给定的格式
+* 其余内容任意
+
+```shell
+.活动状态
+活动名称: [小小写作家202308A]
+```
+
+* 该命令用于查看活动参与情况
+* 该命令仅限**管理员**使用
+* **活动名称需要设置正确**
+* 在群内使用该指令仅仅会显示参与人昵称，管理员私聊的话会显示所有信息，包括打卡内容

@@ -9,22 +9,30 @@ Base = declarative_base()
 class ClubActivity(Base):
     __tablename__ = "ClubActivity"
     activity_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    club_room_id = Column(String(50))
-    club_room_name = Column(String(512))
-    activity_title = Column(String(1024), unique=True)
-    activity_full_content = Column(String(1024 * 100))
-    activity_organizer_id = Column(String(100))
-    activity_organizer_name = Column(String(100))
-    activity_create_date = Column(DateTime)
-    activity_regis_start_date = Column(DateTime)
-    activity_regis_end_date = Column(DateTime)
-    activity_start_date = Column(DateTime)
-    activity_end_date = Column(DateTime)
-    activity_place = Column(String(512))
-    activity_planed_people = Column(Integer)
-    activity_candidate = Column(Integer)
-    activity_point_budget = Column(Integer)
-    activity_consumed_budget = Column(Integer)
+
+    club_room_id = Column(String(50))  # club WeChat room id
+    club_room_name = Column(String(512))  # club WeChat room name
+
+    activity_title = Column(String(1024), unique=True)  # unique activity name
+    activity_full_content = Column(String(1024 * 100))  # full description of one activity
+
+    activity_organizer_id = Column(String(100))  # initializer WeChat id
+    activity_organizer_name = Column(String(100))  # initializer WeChat name
+    activity_organizer_real_name = Column(String(100))  # initializer real name
+
+    activity_create_date = Column(DateTime)  # the activity create date
+    activity_regis_start_date = Column(DateTime)  # register start date,  seems no need
+    activity_regis_end_date = Column(DateTime)  # register end date,  seems no need
+    activity_start_date = Column(DateTime)  # activity start date
+    activity_end_date = Column(DateTime)  # activity end date
+
+    activity_place = Column(String(512))  # online or other place, default is empty
+    activity_planed_people = Column(Integer)  # planed how many people can join in
+    activity_candidate = Column(Integer)  # already registered candidates, seems no need
+    activity_point_budget = Column(Integer)  # planed points for this activity
+    activity_consumed_budget = Column(Integer)  # after activity finished, how many budget costed , seems no need
+    activity_point = Column(Integer)  # for every joined, how much point can earn
+    activity_max_count = Column(Integer)  # Max count to take part in this single activity
 
 
 class ClubActivityFlow(Base):
@@ -34,6 +42,7 @@ class ClubActivityFlow(Base):
     activity_id = Column(Integer, ForeignKey("ClubActivity.activity_id"))
     activity_participates_id = Column(String(1024))
     activity_participates_name = Column(String(1024))
+    activity_participates_real_name = Column(String(1024))
     bonus_point_flow_id = Column(Integer)
     activity_flow_creat_date = Column(DateTime)
 
@@ -44,20 +53,30 @@ class BonusPoint(Base):
     __tablename__ = "BonusPoint"
     bonus_point_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     club_room_id = Column(String(50))
+    club_room_name = Column(String(512))
     club_member_id = Column(String(50))
+    club_member_name = Column(String(50))
+    club_member_real_name = Column(String(50))
     bonus_points = Column(Integer)
+    related_change_flow_ids = Column(String(1024 * 10))
     last_changed_flow_id = Column(Integer)
 
 
 class BonusPointFlow(Base):
     __tablename__ = "BonusPointFlow"
     bonus_flow_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
+    bonus_point_id = Column(Integer)  # the related people bonus id
     club_room_id = Column(String(50))
+    club_room_name = Column(String(512))
     bonus_flow_type = Column(Integer)  # 0->increase , 1->decrease, 2-> force update
-    operator_id = Column(String(50))
+
+    operator_id = Column(String(50))  # people who did this bonus change
+    operator_name = Column(String(512))  # people who did this bonus change
+    operator_real_name = Column(String(512))  # people who did this bonus change
+
     activity_flow_id = Column(Integer)
     previous_point = Column(Integer)
-    current_point = Column(Integer)
+    point_after_operation = Column(Integer)
     bonus_flow_comments = Column(String(1024))
 
 
@@ -83,3 +102,6 @@ class TableManager:
 
 
 table = TableManager()
+
+# table.drop_tables()
+# table.create_tables()

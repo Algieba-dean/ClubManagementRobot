@@ -3,6 +3,10 @@ from datetime import datetime, timedelta
 import PluginClub.DataBase.club_db as db
 
 
+class ClubActivity:
+    def __init__(self):
+        ...
+
 class ClubActivityManager:
 
     @staticmethod

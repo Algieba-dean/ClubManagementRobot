@@ -18,7 +18,7 @@ class ClubActivity(Base):
 
     activity_organizer_id = Column(String(100))  # initializer WeChat id
     activity_organizer_name = Column(String(100))  # initializer WeChat name
-    activity_organizer_real_name = Column(String(100))  # initializer real name
+    activity_organizer_real_name = Column(String(100))  # initializer real name, seems no need
 
     activity_create_date = Column(DateTime)  # the activity create date
     activity_regis_start_date = Column(DateTime)  # register start date,  seems no need
@@ -57,7 +57,8 @@ class BonusPoint(Base):
     club_member_id = Column(String(50))
     club_member_name = Column(String(50))
     club_member_real_name = Column(String(50))
-    bonus_points = Column(Integer)
+    bonus_points_balance = Column(Integer)
+    total_points = Column(Integer)  # transferred points won't be here
     related_change_flow_ids = Column(String(1024 * 10))
     last_changed_flow_id = Column(Integer)
 

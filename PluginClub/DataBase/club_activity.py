@@ -3,10 +3,6 @@ from datetime import datetime, timedelta
 import PluginClub.DataBase.club_db as db
 
 
-class ClubActivity:
-    def __init__(self):
-        ...
-
 class ClubActivityManager:
 
     @staticmethod
@@ -86,12 +82,13 @@ class ClubActivityManager:
             raise Exception("Error in update activity")
 
     @staticmethod
-    def new_participates(title, partici_id, partici_name, content):
+    def new_participates(title, partici_id, partici_name, partici_real_name, content):
         """
         :param title: activity title
         :param partici_id: the participated wxid
         :param partici_name: the participated  nickname
         :param content: the activity participation content
+        :param partici_real_name: real name
         :return:
         """
         try:
@@ -106,15 +103,20 @@ class ClubActivityManager:
             activity_end_date = existed[0].activity_end_date
             if datetime.now() > activity_end_date:
                 raise Exception("Error in new participates")
+
+            # activity flow
             participates = db.ClubActivityFlow(
                 activity_flow_content=content,
                 activity_id=activity_id,
                 activity_participates_id=partici_id,
                 activity_participates_name=partici_name,
+                activity_participates_real_name=partici_real_name,
                 activity_flow_creat_date=datetime.now(),
             )
             db.table.session.add(participates)
             db.table.session.commit()
+
+            # bonus flow
             result_content = f"Activity {title} Joined"
             return result_content
         except Exception as e:

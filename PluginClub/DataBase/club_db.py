@@ -14,6 +14,7 @@ class ClubActivity(Base):
     club_room_name = Column(String(512))  # club WeChat room name
 
     activity_title = Column(String(1024), unique=True)  # unique activity name
+    activity_description = Column(String(1024 * 100))
     activity_full_content = Column(String(1024 * 100))  # full description of one activity
 
     activity_organizer_id = Column(String(100))  # initializer WeChat id
@@ -28,7 +29,7 @@ class ClubActivity(Base):
 
     activity_place = Column(String(512))  # online or other place, default is empty
     activity_planed_people = Column(Integer)  # planed how many people can join in
-    activity_candidate = Column(Integer)  # already registered candidates, seems no need
+    activity_candidates = Column(Integer)  # already registered candidates
     activity_point_budget = Column(Integer)  # planed points for this activity
     activity_consumed_budget = Column(Integer)  # after activity finished, how many budget costed , seems no need
     activity_point = Column(Integer)  # for every joined, how much point can earn

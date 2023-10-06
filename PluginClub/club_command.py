@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 
+import PluginClub.DataBase.const_var as const_var
 from PluginClub.DataBase.club_activity import ClubActivityManager
 from WeChatCore.wechat_bot import GLOBAL_CONTACTS, GLOBAL_ROOMS
 from WeChatCore.wechat_message import WeChatMessage
@@ -33,7 +34,8 @@ class CommandBase:
             date_result = datetime(year=int(date_[0]), month=int(date_[1]), day=int(date_[2]))
             return date_result
         except Exception as e:
-            raise Exception("Error in Date Parsing")
+            error_message = f"Error in Date Parsing: {e}"
+            raise Exception(error_message)
 
     @staticmethod
     def _extract_from_pattern(content: str, pattern: str, is_optional: bool = False) -> str:
@@ -48,7 +50,7 @@ class CommandBase:
         if len(result) <= 0:
             error = f"Didn't matched pattern {pattern}"
             if is_optional:
-                return ""
+                return const_var.DEFAULT_ACTIVITY_PARAS
             raise Exception(error)
         return result[0]
 
@@ -59,6 +61,7 @@ class ActivityCommandBase(CommandBase):
     START_DATE_PATTERN = r"活动开始时间.*\[(.*)\]"
     END_DATE_PATTERN = r"活动结束时间.*\[(.*)\]"
     PLACE_PATTERN = r"活动地点.*\[(.*)\]"
+    DESCRIPTION_PATTERN = r"活动描述.*\[(.*)\]"
     PLANED_PEOPLE_PATTERN = r"活动人数限制.*\[(.*)\]"
     POINT_BUDGET_PATTERN = r"活动积分预算.*\[(.*)\]"
     POINT_PATTERN = r"单次参与/打卡积分奖励.*\[(.*)\]"
@@ -70,12 +73,14 @@ class ActivityCommandBase(CommandBase):
     def __init__(self):
         super().__init__()
 
-    def _parse_activity_start_datetime(self, string: str):
-        start_date_str = self._extract_from_pattern(content=string, pattern=self.START_DATE_PATTERN)
+    def _parse_activity_start_datetime(self, string: str, is_optional=False):
+        start_date_str = self._extract_from_pattern(content=string, pattern=self.START_DATE_PATTERN,
+                                                    is_optional=is_optional)
         return self._parse_date_str(start_date_str)
 
-    def _parse_activity_end_datetime(self, string: str):
-        start_date_str = self._extract_from_pattern(content=string, pattern=self.END_DATE_PATTERN)
+    def _parse_activity_end_datetime(self, string: str, is_optional=False):
+        start_date_str = self._extract_from_pattern(content=string, pattern=self.END_DATE_PATTERN,
+                                                    is_optional=is_optional)
         end_date = self._parse_date_str(start_date_str)
         end_date = datetime(year=end_date.year, month=end_date.month, day=end_date.day,
                             hour=23, minute=59, second=59)
@@ -99,6 +104,8 @@ class NewActivityCommand(ActivityCommandBase):
         end_date = self._parse_activity_end_datetime(msg.content)
 
         # for all optional information
+        description = self._extract_from_pattern(content=msg.content, pattern=self.DESCRIPTION_PATTERN,
+                                                 is_optional=True)
         place = self._extract_from_pattern(content=msg.content, pattern=self.PLACE_PATTERN, is_optional=True)
         planed_people = self._extract_from_pattern(content=msg.content, pattern=self.PLANED_PEOPLE_PATTERN,
                                                    is_optional=True)
@@ -111,6 +118,7 @@ class NewActivityCommand(ActivityCommandBase):
                                                 room_name=room_name,
                                                 title=title,
                                                 full_content=full_content,
+                                                description=description,
                                                 organizer_id=organizer_id,
                                                 organizer_name=organizer_name,
                                                 start_date=start_date,
@@ -130,37 +138,30 @@ class UpdateActivityCommand(ActivityCommandBase):
         self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | CommandRules.ADMIN_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        room_id = msg.roomid
-        room_name = GLOBAL_ROOMS.from_room_id_to_room_name(room_id)
+        # room_id = msg.roomid
+        # room_name = GLOBAL_ROOMS.from_room_id_to_room_name(room_id)
+        # organizer_id = msg.sender
+        # organizer_name = GLOBAL_CONTACTS.wxid2wxname(organizer_id)
         title = self._extract_from_pattern(content=msg.content, pattern=self.TITLE_PATTERN)
-        full_content = str(msg.content).replace(self.command_head, "").lstrip()
-        organizer_id = msg.sender
-        organizer_name = GLOBAL_CONTACTS.wxid2wxname(organizer_id)
-        start_date = self._parse_activity_start_datetime(msg.content)
-        end_date = self._parse_activity_end_datetime(msg.content)
 
         # for all optional information
+        start_date = self._parse_activity_start_datetime(msg.content, is_optional=True)
+        end_date = self._parse_activity_end_datetime(msg.content, is_optional=True)
         place = self._extract_from_pattern(content=msg.content, pattern=self.PLACE_PATTERN, is_optional=True)
+        description = self._extract_from_pattern(content=msg.content, pattern=self.DESCRIPTION_PATTERN,
+                                                 is_optional=True)
         planed_people = self._extract_from_pattern(content=msg.content, pattern=self.PLANED_PEOPLE_PATTERN,
                                                    is_optional=True)
         point_budget = self._extract_from_pattern(content=msg.content, pattern=self.POINT_BUDGET_PATTERN,
                                                   is_optional=True)
         point = self._extract_from_pattern(content=msg.content, pattern=self.POINT_PATTERN, is_optional=True)
         max_earn_count = self._extract_from_pattern(content=msg.content, pattern=self.MAX_EARN_COUNT, is_optional=True)
-        return ClubActivityManager.update_activity(room_id=room_id,
-                                                   room_name=room_name,
-                                                   title=title,
-                                                   full_content=full_content,
-                                                   organizer_id=organizer_id,
-                                                   organizer_name=organizer_name,
-                                                   start_date=start_date,
-                                                   end_date=end_date,
-                                                   place=place,
-                                                   planed_people=planed_people,
-                                                   point_budget=point_budget,
-                                                   point=point,
+        return ClubActivityManager.update_activity(title=title,
+                                                   description=description,
+                                                   planed_people=planed_people, place=place,
+                                                   point=point, point_budget=point_budget,
                                                    max_earn_count=max_earn_count,
-                                                   )
+                                                   start_date=start_date, end_date=end_date)
 
 
 class CheckActivityCommand(ActivityCommandBase):

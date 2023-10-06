@@ -53,11 +53,8 @@ class ClubActivityFlow(Base):
 class BonusPoint(Base):
     __tablename__ = "BonusPoint"
     bonus_point_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    club_room_id = Column(String(50))
     club_room_name = Column(String(512))
-    club_member_id = Column(String(50))
-    club_member_name = Column(String(50))
-    club_member_real_name = Column(String(50))
+    club_member_real_name = Column(String(50), unique=True)
     bonus_points_balance = Column(Integer)
     total_points = Column(Integer)  # transferred points won't be here
     related_change_flow_ids = Column(String(1024 * 10))
@@ -67,6 +64,7 @@ class BonusPoint(Base):
 class BonusPointFlow(Base):
     __tablename__ = "BonusPointFlow"
     bonus_flow_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
+    club_member_real_name = Column(String(50), unique=True)
     bonus_point_id = Column(Integer)  # the related people bonus id
     club_room_id = Column(String(50))
     club_room_name = Column(String(512))

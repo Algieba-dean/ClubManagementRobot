@@ -30,6 +30,7 @@ class ClubActivity(Base):
     activity_place = Column(String(512))  # online or other place, default is empty
     activity_planed_people = Column(Integer)  # planed how many people can join in
     activity_candidates = Column(Integer)  # already registered candidates
+    activity_candidates_name = Column(String(1024 * 100))  # already registered candidates
     activity_point_budget = Column(Integer)  # planed points for this activity
     activity_consumed_budget = Column(Integer)  # after activity finished, how many budget costed , seems no need
     activity_point = Column(Integer)  # for every joined, how much point can earn
@@ -44,6 +45,7 @@ class ClubActivityFlow(Base):
     activity_participates_id = Column(String(1024))
     activity_participates_name = Column(String(1024))
     activity_participates_real_name = Column(String(1024))
+    activity_point_earned = Column(Integer)
     bonus_point_flow_id = Column(Integer)
     activity_flow_creat_date = Column(DateTime)
 
@@ -54,7 +56,7 @@ class BonusPoint(Base):
     __tablename__ = "BonusPoint"
     bonus_point_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
     club_room_name = Column(String(512))
-    club_member_real_name = Column(String(50), unique=True)
+    club_member_real_name = Column(String(50))
     bonus_points_balance = Column(Integer)
     total_points = Column(Integer)  # transferred points won't be here
     related_change_flow_ids = Column(String(1024 * 10))
@@ -64,7 +66,7 @@ class BonusPoint(Base):
 class BonusPointFlow(Base):
     __tablename__ = "BonusPointFlow"
     bonus_flow_id = Column(Integer, primary_key=True, unique=True, autoincrement=True)
-    club_member_real_name = Column(String(50), unique=True)
+    club_member_real_name = Column(String(50))
     bonus_point_id = Column(Integer)  # the related people bonus id
     club_room_id = Column(String(50))
     club_room_name = Column(String(512))
@@ -83,7 +85,8 @@ class BonusPointFlow(Base):
 class TableManager:
     def __init__(self):
         self.db_path = Path("club.db")
-        self.engine = create_engine('sqlite:///club.db', echo=True,
+        self.engine = create_engine('sqlite:///club.db',
+                                    # echo=True,
                                     max_overflow=0,
                                     pool_size=5,
                                     pool_timeout=10,

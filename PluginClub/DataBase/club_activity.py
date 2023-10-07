@@ -36,6 +36,7 @@ class BonusManager:
                        operator_real_name=const_var.AUTO_BONUS_OPERATOR_REAL_NAME
                        ):
         """
+        Bonus account will also be updated here
         :param club_room_id:
         :param club_room_name: 
         :param club_member_real_name: 
@@ -69,9 +70,9 @@ class BonusManager:
 
         # update bonus account with new bonus flow
         bonus_flow = db.table.session.query(db.BonusPointFlow) \
-            .filter(db.BonusPointFlow.club_member_real_name == club_room_name) \
-            .filter(db.BonusPoint.club_member_real_name == club_member_real_name) \
-            .order_by(db.BonusPoint.bonus_flow_id.desc()).first()
+            .filter(db.BonusPointFlow.club_room_name == club_room_name) \
+            .filter(db.BonusPointFlow.club_member_real_name == club_member_real_name) \
+            .order_by(db.BonusPointFlow.bonus_flow_id.desc()).first()
         bonus_account.last_changed_flow_id = bonus_flow.bonus_flow_id
         bonus_account.related_change_flow_ids += f" {bonus_flow.bonus_flow_id}"
         bonus_account.bonus_points_balance = point_after_operation
@@ -95,14 +96,6 @@ class ClubActivityManager:
             error_message = f"Activity title {title} doesn't exist"
             raise Exception(error_message)
         return existed_activities[0]
-
-    @staticmethod
-    def check_if_reached_max_earned_points(title, partici_real_name) -> bool:
-        """
-        :param title:  activity title
-        :param partici_real_name:  participants real name
-        :return:
-        """
 
     @staticmethod
     def new_activity(room_id, room_name, title, full_content, description,
@@ -134,6 +127,13 @@ class ClubActivityManager:
             if len(query.all()) > 0:
                 error_message = f"{title} activity already existed, please consider update it"
                 raise Exception(error_message)
+            # bonus setting should be synced
+            if point + max_earn_count + point_budget != 3 * const_var.DEFAULT_ACTIVITY_PARAS \
+                    and point + max_earn_count + point_budget < 0:
+                # != 3* defaults means, not all default
+                # < 0 means any of them set  to default
+                error_message = f"{title} activity points set error, please check again."
+                raise Exception(error_message)
             # if didn't exist
             activity = db.ClubActivity(
                 club_room_id=room_id,
@@ -152,6 +152,7 @@ class ClubActivityManager:
                 activity_start_date=start_date,
                 activity_end_date=end_date,
                 activity_candidates=0,
+                activity_candidates_name="",
                 activity_consumed_budget=0,
             )
             db.table.session.add(activity)
@@ -255,19 +256,33 @@ class ClubActivityManager:
                 error_message = f"Activity {title} already timeout at {activity_end_date}"
                 raise Exception(error_message)
 
+            candidates_name = activity.activity_candidates_name.split(" ")
+            if partici_real_name not in candidates_name:
+                activity.activity_candidates += 1
+                activity.activity_candidates_name += f" {partici_real_name}"
             # planed people handle
             left_seats = activity.activity_planed_people - activity.activity_candidates
             if activity.activity_planed_people != const_var.DEFAULT_ACTIVITY_PARAS:
-                if left_seats <= 0:
+                if left_seats < 0 and partici_real_name not in candidates_name:
                     error_message = f"No more activity seats. " \
                                     f"\nPlaned:{activity.activity_planed_people} " \
                                     f"\nTaken: {activity.activity_candidates} "
                     raise Exception(error_message)
-                result_content += f"Left Seats: {left_seats - 1}\n"
-            result_content += f"\nActivity {title} Joined\n"
-            activity.activity_candidates += 1
+                result_content += f"\nLeft Seats: [{left_seats}]"
+            result_content += f" \n[{partici_real_name}] joined  activity [{title}]\n"
 
             # activity flow
+
+            all_previous_earned = 0
+            ## get last activity flow
+            all_joined_flows = db.table.session.query(db.ClubActivityFlow) \
+                .filter(db.ClubActivityFlow.activity_id == activity.activity_id) \
+                .filter(db.ClubActivityFlow.activity_participates_real_name == partici_real_name) \
+                .order_by(db.ClubActivityFlow.activity_flow_id.desc()) \
+                .all()
+            if len(all_joined_flows) > 0:
+                last_joined_flow = all_joined_flows[0]
+                all_previous_earned = last_joined_flow.activity_point_earned
 
             participates = db.ClubActivityFlow(
                 activity_flow_content=content,
@@ -275,9 +290,11 @@ class ClubActivityManager:
                 activity_participates_id=partici_id,
                 activity_participates_name=partici_name,
                 activity_participates_real_name=partici_real_name,
+                activity_point_earned=all_previous_earned,
                 activity_flow_creat_date=datetime.now(),
             )
             db.table.session.add(participates)
+            db.table.session.commit()
 
             # bonus flow
 
@@ -289,13 +306,60 @@ class ClubActivityManager:
                     :
                 db.table.session.commit()
                 return result_content
-            ## if already reached max earned points
-            # TODO
-            ...
 
+            ## if no more budget
+            if activity.activity_consumed_budget + activity.activity_point > activity.activity_point_budget:
+                db.table.session.commit()
+                result_content += f" \n [No more points budget, can't increase your points]" \
+                                  f" \n Activity points budget: {activity.activity_point_budget} " \
+                                  f" \n Activity consumed points: {activity.activity_consumed_budget} "
+                return result_content
+
+            ## if already reached max earned points
+
+            # PS: the last one, is current operating one, for
+            current_flow = db.table.session.query(db.ClubActivityFlow) \
+                .filter(db.ClubActivityFlow.activity_id == activity.activity_id) \
+                .filter(db.ClubActivityFlow.activity_participates_real_name == partici_real_name) \
+                .order_by(db.ClubActivityFlow.activity_flow_id.desc()) \
+                .first()
+            if all_previous_earned + activity.activity_point > activity.activity_max_count:
+                current_flow.activity_point_earned = all_previous_earned
+                result_content += f" \n [Already reached max points in current activity] " \
+                                  f" \n [Max]: {activity.activity_max_count} " \
+                                  f" \n [Earned]: {all_previous_earned}"
+                db.table.session.commit()
+                return result_content
+            # can add points
+            current_flow.activity_point_earned += activity.activity_point
+
+            # new bonus flow
+            previous_point_balance = BonusManager.get_bonus_account(club_name=activity.club_room_name,
+                                                                    club_member_real_name=partici_real_name) \
+                .total_points
+            BonusManager.new_bonus_flow(club_room_id=activity.club_room_id,
+                                        club_room_name=activity.club_room_name,
+                                        club_member_real_name=partici_real_name,
+                                        operator_id=activity.activity_organizer_id,
+                                        operator_name=activity.activity_organizer_name,
+                                        previous_point=previous_point_balance,
+                                        point_after_operation=previous_point_balance + activity.activity_point,
+                                        activity_flow_id=current_flow.activity_flow_id
+                                        )
+            activity.activity_consumed_budget += activity.activity_point
+            bonus_account = BonusManager.get_bonus_account(club_name=activity.club_room_name,
+                                                           club_member_real_name=partici_real_name)
+            result_content += f" \n [{activity.activity_point}] point(s) added " \
+                              f" \n activity points now have " \
+                              f"{activity.activity_point_budget - activity.activity_consumed_budget} left" \
+                              f" \n In [{activity.club_room_name}] club " \
+                              f"[{partici_real_name}] already collected " \
+                              f"[{bonus_account.total_points}] " \
+                              f" \n current balance:[{bonus_account.bonus_points_balance}]"
             db.table.session.commit()
             return result_content
         except Exception as e:
+            db.table.session.commit()
             error_message = f"Error in new participates: {e}"
             raise Exception(error_message)
 

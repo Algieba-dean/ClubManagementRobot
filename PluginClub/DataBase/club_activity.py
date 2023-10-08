@@ -33,7 +33,8 @@ class BonusManager:
     def new_bonus_flow(club_room_id, club_room_name, club_member_real_name,
                        operator_id, operator_name, previous_point, point_after_operation,
                        activity_flow_id=None, bonus_flow_type=const_var.BONUS_FLOW_TYPE_INCREASE,
-                       operator_real_name=const_var.AUTO_BONUS_OPERATOR_REAL_NAME
+                       operator_real_name=const_var.AUTO_BONUS_OPERATOR_REAL_NAME,
+                       comments="",
                        ):
         """
         Bonus account will also be updated here
@@ -46,7 +47,8 @@ class BonusManager:
         :param point_after_operation: 
         :param activity_flow_id: 
         :param bonus_flow_type: 
-        :param operator_real_name: 
+        :param operator_real_name:
+        :param comments
         :return: 
         """
         bonus_account = BonusManager.get_bonus_account(club_room_name, club_member_real_name)
@@ -63,7 +65,8 @@ class BonusManager:
             activity_flow_id=activity_flow_id,
             previous_point=previous_point,
             point_after_operation=point_after_operation,
-            bonus_flow_comments="",
+            operation_date=datetime.now(),
+            bonus_flow_comments=comments,
         )
         db.table.session.add(new_bonus_flow)
         db.table.session.commit()
@@ -80,6 +83,280 @@ class BonusManager:
             bonus_account.total_points += point_after_operation - previous_point
 
         db.table.session.commit()
+
+    @staticmethod
+    def operate_bonus_points(club_name: str,
+                             operator_id: str, operator_name: str,
+                             target_real_names: list,
+                             operator_real_name=const_var.ADMIN_BONUS_OPERATOR_REAL_NAME,
+                             increased_points=const_var.DEFAULT_ACTIVITY_PARAS,
+                             decreased_points=const_var.DEFAULT_ACTIVITY_PARAS,
+                             set_to_points=const_var.DEFAULT_ACTIVITY_PARAS,
+                             comments="",
+                             ):
+        try:
+            result_content = f""
+            if len(target_real_names) <= 0:
+                error_message = f"No valid target names"
+                raise Exception(error_message)
+            # check club name
+            club_room_id = None  # TODO
+            if increased_points is not const_var.DEFAULT_ACTIVITY_PARAS:
+                increased_points = int(increased_points.replace("+", ""))
+                for real_name in target_real_names:
+                    previous_point = BonusManager.get_bonus_account(club_name=club_name,
+                                                                    club_member_real_name=real_name) \
+                        .bonus_points_balance
+                    point_after_operation = previous_point + increased_points
+                    BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                                club_room_name=club_name,
+                                                club_member_real_name=real_name,
+                                                operator_id=operator_id,
+                                                operator_name=operator_name,
+                                                previous_point=previous_point,
+                                                point_after_operation=point_after_operation,
+                                                bonus_flow_type=const_var.BONUS_FLOW_TYPE_INCREASE,
+                                                operator_real_name=operator_real_name,
+                                                comments=comments,
+                                                )
+                    result_content += f" \n for user [{real_name}] points in club [{club_name}] " \
+                                      f"increased by [{increased_points}], " \
+                                      f"now is [{point_after_operation}] "
+                return result_content
+
+            if decreased_points is not const_var.DEFAULT_ACTIVITY_PARAS:
+                decreased_points = int(decreased_points.replace("-", ""))
+                for real_name in target_real_names:
+                    previous_point = BonusManager.get_bonus_account(club_name=club_name,
+                                                                    club_member_real_name=real_name) \
+                        .bonus_points_balance
+                    point_after_operation = previous_point - decreased_points
+                    if point_after_operation < 0:
+                        result_content += f"\nIn club [{club_name}] user [{real_name}] balance is [{previous_point}]" \
+                                          f"\n Can't  decrease [{decreased_points}] point(s)"
+                        continue
+                    BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                                club_room_name=club_name,
+                                                club_member_real_name=real_name,
+                                                operator_id=operator_id,
+                                                operator_name=operator_name,
+                                                previous_point=previous_point,
+                                                point_after_operation=point_after_operation,
+                                                bonus_flow_type=const_var.BONUS_FLOW_TYPE_DECREASE,
+                                                operator_real_name=operator_real_name,
+                                                comments=comments,
+                                                )
+                    result_content += f" \n for user [{real_name}] points in club [{club_name}] decreased " \
+                                      f"by [{decreased_points}], " \
+                                      f"now is [{point_after_operation}] "
+                return result_content
+
+            if set_to_points is not const_var.DEFAULT_ACTIVITY_PARAS:
+                set_to_points = int(set_to_points.replace("=", ""))
+                for real_name in target_real_names:
+                    previous_point = BonusManager.get_bonus_account(club_name=club_name,
+                                                                    club_member_real_name=real_name) \
+                        .bonus_points_balance
+                    point_after_operation = set_to_points
+                    BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                                club_room_name=club_name,
+                                                club_member_real_name=real_name,
+                                                operator_id=operator_id,
+                                                operator_name=operator_name,
+                                                previous_point=previous_point,
+                                                point_after_operation=point_after_operation,
+                                                bonus_flow_type=const_var.BONUS_FLOW_TYPE_SET_TO,
+                                                operator_real_name=operator_real_name,
+                                                comments=comments,
+                                                )
+                    result_content += f" \n for user [{real_name}] points in club [{club_name}] set to [{set_to_points}] "
+                return result_content
+            error_message = f"No valid operation."
+            raise Exception(error_message)
+
+        except Exception as e:
+            error_message = f" :{e}"
+            raise Exception(error_message)
+        ...
+
+    @staticmethod
+    def consume_bonus_points(club_name: str,
+                             operator_id: str, operator_name: str,
+                             target_real_name: str,
+                             consumed_points: int,
+                             operator_real_name: str,
+                             comments="",
+                             ):
+        try:
+            result_content = f""
+            club_room_id = ""
+            previous_point = BonusManager.get_bonus_account(club_name=club_name, club_member_real_name=target_real_name) \
+                .bonus_points_balance
+            point_after_operation = previous_point - consumed_points
+            if point_after_operation < 0:
+                result_content += f"In club [{club_name}] user [{target_real_name}] balance is {previous_point}" \
+                                  f"\n Can't afford to consume [{consumed_points}] point(s)"
+                return result_content
+            BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                        club_room_name=club_name,
+                                        club_member_real_name=target_real_name,
+                                        operator_id=operator_id,
+                                        operator_name=operator_name,
+                                        previous_point=previous_point,
+                                        point_after_operation=point_after_operation,
+                                        bonus_flow_type=const_var.BONUS_FLOW_TYPE_DECREASE,
+                                        operator_real_name=operator_real_name,
+                                        comments=comments,
+                                        )
+            result_content += f"\nIn club [{club_name}], user [{target_real_name}] consumed [{consumed_points}] points." \
+                              f"\nNow has [{point_after_operation}] left."
+            return result_content
+
+        except Exception as e:
+            error_message = f" Error in consume points:{e}"
+            raise Exception(error_message)
+        ...
+
+    @staticmethod
+    def donate_bonus_points(club_name: str, club_member_real_name: str,
+                            operator_id: str, operator_name: str, donated_points: int,
+                            comments="",
+                            ):
+        try:
+            result_content = f""
+            club_room_id = ""
+            common_account = BonusManager.get_bonus_account(club_name=club_name,
+                                                            club_member_real_name=const_var.COMMON_ACCOUNT_REAL_NAME)
+            source_account = BonusManager.get_bonus_account(club_name=club_name,
+                                                            club_member_real_name=club_member_real_name)
+
+            # source consume
+            previous_point = source_account.bonus_points_balance
+            point_after_operation = source_account.bonus_points_balance - donated_points
+            if point_after_operation < 0:
+                result_content += f"\nIn club [{club_name}] user [{club_member_real_name}] balance is {previous_point}" \
+                                  f"\n Can't afford to donate [{donated_points}] point(s)"
+                return result_content
+            BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                        club_room_name=club_name,
+                                        club_member_real_name=club_member_real_name,
+                                        operator_id=operator_id,
+                                        operator_name=operator_name,
+                                        previous_point=source_account.bonus_points_balance,
+                                        point_after_operation=source_account.bonus_points_balance - donated_points,
+                                        bonus_flow_type=const_var.BONUS_FLOW_TYPE_DECREASE,
+                                        operator_real_name=club_member_real_name,
+                                        comments=comments,
+                                        )
+            common_points_after_operation = source_account.bonus_points_balance + donated_points
+            BonusManager.new_bonus_flow(club_room_id=club_room_id,
+                                        club_room_name=club_name,
+                                        club_member_real_name=const_var.COMMON_ACCOUNT_REAL_NAME,
+                                        operator_id=operator_id,
+                                        operator_name=operator_name,
+                                        previous_point=source_account.bonus_points_balance,
+                                        point_after_operation=common_points_after_operation,
+                                        bonus_flow_type=const_var.BONUS_FLOW_TYPE_INCREASE,
+                                        operator_real_name=club_member_real_name,
+                                        comments=comments,
+                                        )
+            result_content += f"\nIn club [{club_name}], user [{club_member_real_name}] donated [{donated_points}] points." \
+                              f"\nNow has [{point_after_operation}] left." \
+                              f"\n Common user has [{common_points_after_operation}]"
+            return result_content
+
+        except Exception as e:
+            error_message = f" Error in donate points: {e}"
+            raise Exception(error_message)
+
+    @staticmethod
+    def query_bonus_points_balance(club_name: str, club_member_real_name: str):
+        try:
+            result_content = ""
+            balance = BonusManager.get_bonus_account(club_name=club_name, club_member_real_name=club_member_real_name) \
+                .bonus_points_balance
+            result_content += f"\nIn club [{club_name}], user [{club_member_real_name}] has [{balance}] point(s) left"
+            return result_content
+
+        except Exception as e:
+            error_message = f" Error in query points :{e}"
+            raise Exception(error_message)
+        ...
+
+    @staticmethod
+    def query_bonus_points_flow(club_name: str, club_member_real_name: str):
+        try:
+            result_content = ""
+            existed_flows = db.table.session.query(db.BonusPointFlow) \
+                .filter(db.BonusPointFlow.club_room_name == club_name) \
+                .filter(db.BonusPointFlow.club_member_real_name == club_member_real_name) \
+                .order_by(db.BonusPointFlow.bonus_flow_id.desc()) \
+                .all()
+            if len(existed_flows) <= 0:
+                result_content += f"\nNo points flow for user [{club_member_real_name}] in club [{club_name}]"
+                return result_content
+            result_content += f"\\n <Points Flow>\n"
+            for flow in existed_flows:
+                result_content += f"\n flow_id {flow.bonus_flow_id}" \
+                                  f"\n user {club_member_real_name}" \
+                                  f"\n club {club_name}" \
+                                  f"\n previous point(s) :{flow.previous_point}" \
+                                  f"\n points after operation: {flow.point_after_operation}" \
+                                  f"\n operator WeChat id: {flow.operator_id}" \
+                                  f"\n operator WeChat name: {flow.operator_name}" \
+                                  f"\n operator name : {flow.operator_real_name}" \
+                                  f"\n operation date : {flow.operation_date}" \
+                                  f"\n operation comments: {flow.bonus_flow_comments}\n"
+            return result_content
+
+        except Exception as e:
+            error_message = f" Error in query point flow:{e}"
+            raise Exception(error_message)
+
+    @staticmethod
+    def query_bonus_points_all(club_name: str):
+        try:
+            result_content = ""
+            all_bonus = db.table.session.query(db.BonusPoint).filter(db.BonusPoint.club_room_name == club_name). \
+                order_by(db.BonusPoint.total_points.desc()).all()
+            if len(all_bonus) <= 0:
+                result_content += f"No any users for club [{club_name}] yet"
+            count = 0
+            result_content += f"\n club [{club_name}] collected points \n"
+            for bonus in all_bonus:
+                if bonus.club_member_real_name == const_var.COMMON_ACCOUNT_REAL_NAME:
+                    continue
+                count += 1
+                result_content += f"\n #{count} user [{bonus.club_member_real_name}] " \
+                                  f"collected points [{bonus.total_points}]"
+            return result_content
+
+        except Exception as e:
+            error_message = f" :{e}"
+            raise Exception(error_message)
+        ...
+
+    @staticmethod
+    def query_balance_all(club_name: str):
+        try:
+            result_content = ""
+            all_bonus = db.table.session.query(db.BonusPoint).filter(db.BonusPoint.club_room_name == club_name). \
+                order_by(db.BonusPoint.bonus_points_balance.desc()).all()
+            if len(all_bonus) <= 0:
+                result_content += f"No any users for club [{club_name}] yet"
+
+            count = 0
+            result_content += f"\n club [{club_name}] points balance \n"
+            for bonus in all_bonus:
+                count += 1
+                result_content += f"\n #{count} user [{bonus.club_member_real_name}] " \
+                                  f"points balance :[{bonus.bonus_points_balance}]"
+            return result_content
+
+        except Exception as e:
+            error_message = f" :{e}"
+            raise Exception(error_message)
+        ...
 
 
 class ClubActivityManager:
@@ -160,8 +437,8 @@ class ClubActivityManager:
             result_content = f"Activity {title} created"
             return result_content
         except Exception as e:
-            error_meesage = f"Error in update activity :{e}"
-            raise Exception(error_meesage)
+            error_message = f"Error in update activity :{e}"
+            raise Exception(error_message)
 
     @staticmethod
     def update_activity(title,
@@ -337,6 +614,7 @@ class ClubActivityManager:
             previous_point_balance = BonusManager.get_bonus_account(club_name=activity.club_room_name,
                                                                     club_member_real_name=partici_real_name) \
                 .total_points
+            comments = f"Joined activity {title} "
             BonusManager.new_bonus_flow(club_room_id=activity.club_room_id,
                                         club_room_name=activity.club_room_name,
                                         club_member_real_name=partici_real_name,
@@ -344,7 +622,8 @@ class ClubActivityManager:
                                         operator_name=activity.activity_organizer_name,
                                         previous_point=previous_point_balance,
                                         point_after_operation=previous_point_balance + activity.activity_point,
-                                        activity_flow_id=current_flow.activity_flow_id
+                                        activity_flow_id=current_flow.activity_flow_id,
+                                        comments=comments,
                                         )
             activity.activity_consumed_budget += activity.activity_point
             bonus_account = BonusManager.get_bonus_account(club_name=activity.club_room_name,
@@ -353,7 +632,7 @@ class ClubActivityManager:
                               f" \n activity points now have " \
                               f"{activity.activity_point_budget - activity.activity_consumed_budget} left" \
                               f" \n In [{activity.club_room_name}] club " \
-                              f"[{partici_real_name}] already collected " \
+                              f"user [{partici_real_name}] already collected " \
                               f"[{bonus_account.total_points}] " \
                               f" \n current balance:[{bonus_account.bonus_points_balance}]"
             db.table.session.commit()

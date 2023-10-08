@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 import PluginClub.DataBase.const_var as const_var
-from PluginClub.DataBase.club_activity import ClubActivityManager
+from PluginClub.DataBase.club_activity import ClubActivityManager, BonusManager
 from WeChatCore.wechat_bot import GLOBAL_CONTACTS, GLOBAL_ROOMS
 from WeChatCore.wechat_message import WeChatMessage
 
@@ -202,7 +202,12 @@ class JoinActivityCommand(ActivityCommandBase):
 
 class BonusCommandBase(CommandBase):
     CLUB_NAME_PATTERN = r"俱乐部群名.*\[(.*)\]"
-    JOINED_REAL_NAME_PATTERN = r"姓名.*\[(.*)\]"  # multiply query target supported
+    TARGET_REAL_NAME_PATTERN = r"姓名.*\[(.*)\]"  # multiply query target supported
+    POINTS_INCREASE_PATTERN = r"积分.*\[+\d+\]"
+    POINTS_DECREASE_PATTERN = r"积分.*\[-\d+\]"
+    POINTS_SET_TO_PATTERN = r"积分.*\[=\d+\]"
+    POINTS_OPERATION_PATTERN = r"积分.*\[\d+\]"
+    COMMENTS_PATTERN = r"备注.*\[=(.*)\]"
 
     def __init__(self):
         super().__init__()
@@ -213,10 +218,42 @@ class OperateBonus(BonusCommandBase):
         super().__init__()
         self.command_head = ".操作积分"
         self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
-                            CommandRules.ADMIN_ALLOW
+                            CommandRules.ADMIN_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        increased_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_INCREASE_PATTERN,
+                                                      is_optional=True).replace("+", "")
+        decreased_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_DECREASE_PATTERN,
+                                                      is_optional=True).replace("-", "")
+
+        set_to_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_SET_TO_PATTERN,
+                                                   is_optional=True).replace("=", "")
+        comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN,
+                                              is_optional=True)
+        comments = "" if comments == const_var.DEFAULT_ACTIVITY_PARAS else comments
+        operator_id = msg.sender
+        operator_name = GLOBAL_CONTACTS.wxid2wxname(operator_id)
+        operator_real_name = const_var.ADMIN_BONUS_OPERATOR_REAL_NAME
+        target_real_names_raw = self._extract_from_pattern(content=msg.content, pattern=self.TARGET_REAL_NAME_PATTERN)
+        target_real_names = list()
+        for name in target_real_names_raw.split(" "):
+            if name == "":
+                continue
+            target_real_names.append(name)
+
+        return BonusManager.operate_bonus_points(club_name=club_name,
+                                                 operator_id=operator_id,
+                                                 operator_name=operator_name,
+                                                 operator_real_name=operator_real_name,
+                                                 target_real_names=target_real_names,
+                                                 increased_points=increased_points,
+                                                 decreased_points=decreased_points,
+                                                 set_to_points=set_to_points,
+                                                 comments=comments
+                                                 )
 
 
 class ConsumeBonus(BonusCommandBase):
@@ -227,7 +264,23 @@ class ConsumeBonus(BonusCommandBase):
                             CommandRules.EVERY_ONE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        operation_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_OPERATION_PATTERN)
+        comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN,
+                                              is_optional=True)
+        comments = "" if comments == const_var.DEFAULT_ACTIVITY_PARAS else comments
+        operator_id = msg.sender
+        operator_name = GLOBAL_CONTACTS.wxid2wxname(operator_id)
+        target_real_name = self._extract_from_pattern(content=msg.content, pattern=self.TARGET_REAL_NAME_PATTERN)
+
+        return BonusManager.consume_bonus_points(club_name=club_name,
+                                                 operator_id=operator_id,
+                                                 operator_name=operator_name,
+                                                 target_real_name=target_real_name,
+                                                 consumed_points=int(operation_points),
+                                                 operator_real_name=target_real_name,
+                                                 comments=comments,
+                                                 )
 
 
 class DonateBonus(BonusCommandBase):
@@ -238,7 +291,22 @@ class DonateBonus(BonusCommandBase):
                             CommandRules.EVERY_ONE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        operation_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_OPERATION_PATTERN)
+        comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN,
+                                              is_optional=True)
+        comments = "" if comments == const_var.DEFAULT_ACTIVITY_PARAS else comments
+        operator_id = msg.sender
+        operator_name = GLOBAL_CONTACTS.wxid2wxname(operator_id)
+        target_real_name = self._extract_from_pattern(content=msg.content, pattern=self.TARGET_REAL_NAME_PATTERN)
+
+        return BonusManager.donate_bonus_points(club_name=club_name,
+                                                operator_id=operator_id,
+                                                operator_name=operator_name,
+                                                club_member_real_name=target_real_name,
+                                                donated_points=int(operation_points),
+                                                comments=comments,
+                                                )
 
 
 class QueryBonusBalance(BonusCommandBase):
@@ -246,10 +314,15 @@ class QueryBonusBalance(BonusCommandBase):
         super().__init__()
         self.command_head = ".查询积分余额"
         self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
-                            CommandRules.EVERY_ONE_ALLOW
+                            CommandRules.EVERY_ONE_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        target_real_name = self._extract_from_pattern(content=msg.content, pattern=self.TARGET_REAL_NAME_PATTERN)
+        return BonusManager.query_bonus_points_balance(club_name=club_name,
+                                                       club_member_real_name=target_real_name,
+                                                       )
 
 
 class QueryBonusFlow(BonusCommandBase):
@@ -257,10 +330,14 @@ class QueryBonusFlow(BonusCommandBase):
         super().__init__()
         self.command_head = ".查询积分流水"
         self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
-                            CommandRules.EVERY_ONE_ALLOW
+                            CommandRules.EVERY_ONE_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        target_real_name = self._extract_from_pattern(content=msg.content, pattern=self.TARGET_REAL_NAME_PATTERN)
+        return BonusManager.query_bonus_points_flow(club_name=club_name,
+                                                    club_member_real_name=target_real_name)
 
 
 class QueryBonusAll(BonusCommandBase):
@@ -268,10 +345,80 @@ class QueryBonusAll(BonusCommandBase):
         super().__init__()
         self.command_head = ".查询积分总榜"
         self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
-                            CommandRules.EVERY_ONE_ALLOW
+                            CommandRules.EVERY_ONE_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        ...
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        return BonusManager.query_bonus_points_all(club_name=club_name)
+
+
+class QueryBalanceAll(BonusCommandBase):
+    def __init__(self):
+        super().__init__()
+        self.command_head = ".查询余额总榜"
+        self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
+                            CommandRules.EVERY_ONE_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
+
+    def parse_command(self, msg: WeChatMessage):
+        club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
+        return BonusManager.query_balance_all(club_name=club_name)
+
+
+class HelpCommand(CommandBase):
+    COMMAND_PATTERN = r"命令名.*\[(.*)\]"
+
+    def __init__(self):
+        super().__init__()
+        self.command_head = ".帮助"
+        self.command_rule = CommandRules.GROUP_MESSAGE_ALLOW | \
+                            CommandRules.EVERY_ONE_ALLOW | \
+                            CommandRules.DIRECT_MESSAGE_ALLOW
+
+    def parse_command(self, msg: WeChatMessage):
+        result_content = ""
+        command = self._extract_from_pattern(content=msg.content, pattern=self.COMMAND_PATTERN, is_optional=True)
+        if command == const_var.DEFAULT_ACTIVITY_PARAS:
+            result_content += "\n可用命令如下:\n" \
+                              ".发起活动       -- 用于管理员发起活动\n" \
+                              ".更新活动       -- 用于管理员更改活动信息\n" \
+                              ".活动状态       -- 用于查看活动参与情况\n" \
+                              ".打卡          -- 用于参与活动\n" \
+                              ".操作积分       -- 用于管理员操作积分\n" \
+                              ".消费积分       -- 用于消费积累的积分\n" \
+                              ".捐献积分       -- 用于捐赠积分到COMMON用户\n" \
+                              ".查询积分余额    -- 用于查询指定用户的积分余额\n" \
+                              ".查询积分流水    -- 用于查询指定用户的积分流水\n" \
+                              ".查询积分总榜    -- 用于查询累计获得积分的积分榜\n" \
+                              ".查询余额总榜    -- 用于查询积分余额的积分榜\n" \
+                              "\n" \
+                              "可按照如下格式进行各个命令的详细使用帮助查询" \
+                              "\n.帮助" \
+                              "\n命令名: [命令]"
+            return result_content
+        if command == ".发起活动":
+            return result_content
+        if command == ".更新活动":
+            return result_content
+        if command == "活动状态":
+            return result_content
+        if command == "打卡":
+            return result_content
+        if command == ".操作积分":
+            return result_content
+        if command == ".消费积分":
+            return result_content
+        if command == ".捐献积分":
+            return result_content
+        if command == ".查询积分余额":
+            return result_content
+        if command == ".查询积分流水":
+            return result_content
+        if command == ".查询积分总榜":
+            return result_content
+        if command == ".查询余额总榜":
+            return result_content
 
 
 if __name__ == "__main__":

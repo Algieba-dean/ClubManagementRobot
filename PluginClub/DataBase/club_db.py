@@ -75,6 +75,7 @@ class BonusPointFlow(Base):
     operator_id = Column(String(50))  # people who did this bonus change
     operator_name = Column(String(512))  # people who did this bonus change
     operator_real_name = Column(String(512))  # people who did this bonus change
+    operation_date = Column(DateTime)
 
     activity_flow_id = Column(Integer)
     previous_point = Column(Integer)

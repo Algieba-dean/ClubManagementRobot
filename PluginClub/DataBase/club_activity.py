@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import PluginClub.DataBase.club_db as db
-from PluginClub.DataBase  import const_var
+from PluginClub.DataBase import const_var
 
 
 class CommandHelper:
@@ -128,11 +128,13 @@ class CommandHelper:
                                   "\n\n参数介绍: [" \
                                   "\n\t活动名称: [XXX俱乐部_X月XX活动A] (必需参数,待参与的活动名称)" \
                                   "\n\t参与人: [aaa.bbb] (必需参数,\n\n成员的唯一标识,参与人的邮箱前缀,即@前的部分 如abc012.zzz@defg.com)" \
+                                  "\n\t备注: [打卡内容] (必需参数,可为任意内容，打卡内容)" \
                                   "\n\n]" \
                                   "\n完整使用示例如下" \
                                   "\n\n.打卡" \
                                   "\n活动名称: [XXX俱乐部_X月XX活动A]" \
-                                  "\n参与人: [aaa.bbb]"
+                                  "\n参与人: [aaa.bbb]" \
+                                  "\n备注: [打卡的内容]"
                 return result_content
             if command == ".操作积分":
                 result_content += "\n<.操作积分>\n" \
@@ -796,7 +798,7 @@ class ClubActivityManager:
             raise Exception(error_message)
 
     @staticmethod
-    def new_participates(title, partici_id, partici_name, partici_real_name, content):
+    def new_participates(title, partici_id, partici_name, partici_real_name, content, comments=""):
         """
         :param title: activity title, as activity name is associated with club name, so no need for it
         :param partici_id: the participated wxid
@@ -853,6 +855,7 @@ class ClubActivityManager:
                 activity_participates_real_name=partici_real_name,
                 activity_point_earned=all_previous_earned,
                 activity_flow_creat_date=datetime.now(),
+                join_comments=comments,
             )
             db.table.session.add(participates)
             db.table.session.commit()
@@ -884,10 +887,10 @@ class ClubActivityManager:
                 .filter(db.ClubActivityFlow.activity_participates_real_name == partici_real_name) \
                 .order_by(db.ClubActivityFlow.activity_flow_id.desc()) \
                 .first()
-            if all_previous_earned + activity.activity_point > activity.activity_max_count:
+            if all_previous_earned + activity.activity_point > activity.activity_max_count * activity.activity_point:
                 current_flow.activity_point_earned = all_previous_earned
                 result_content += f" \n [Already reached max points in current activity] " \
-                                  f" \n [Max]: {activity.activity_max_count} " \
+                                  f" \n [Max]: {activity.activity_max_count * activity.activity_point} " \
                                   f" \n [Earned]: {all_previous_earned}"
                 db.table.session.commit()
                 return result_content
@@ -914,7 +917,7 @@ class ClubActivityManager:
                                                            club_member_real_name=partici_real_name)
             result_content += f" \n [{activity.activity_point}] point(s) added " \
                               f" \n activity points now have " \
-                              f"{activity.activity_point_budget - activity.activity_consumed_budget} left" \
+                              f"[{activity.activity_point_budget - activity.activity_consumed_budget}] left" \
                               f" \n In [{activity.club_room_name}] club " \
                               f"user [{partici_real_name}] already collected " \
                               f"[{bonus_account.total_points}] " \
@@ -953,7 +956,7 @@ class ClubActivityManager:
                 if show_flag & const_var.SHOW_ACTIVITY_STATUS_DATE:  # date
                     result += f"\ndate:{flow.activity_flow_creat_date}"
                 if show_flag & const_var.SHOW_ACTIVITY_STATUS_CONTENT:  # content
-                    result += f"\ncontent:\n[{flow.activity_flow_content}]"
+                    result += f"\ncontent:\n[{flow.join_comments}]"
             return result
         except Exception as e:
             error_message = f"Error in show activity status: {e}"

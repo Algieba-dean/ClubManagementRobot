@@ -65,7 +65,8 @@ class ActivityCommandBase(CommandBase):
     PLANED_PEOPLE_PATTERN = r"活动人数限制.*\[(.*)\]"
     POINT_BUDGET_PATTERN = r"活动积分预算.*\[(.*)\]"
     POINT_PATTERN = r"单次参与/打卡积分奖励.*\[(.*)\]"
-    MAX_EARN_COUNT = r"最大积分打卡次数.*\[(.*)\]" # TODO 这个参数的理解好像有问题
+    MAX_EARN_COUNT = r"最大积分打卡次数.*\[(.*)\]"
+    COMMENTS_PATTERN = r"备注.*\[(.*)\]"
 
     # activity participant
     JOINED_REAL_NAME_PATTERN = r"参与人.*\[(.*)\]"
@@ -124,10 +125,10 @@ class NewActivityCommand(ActivityCommandBase):
                                                 start_date=start_date,
                                                 end_date=end_date,
                                                 place=place,
-                                                planed_people=planed_people,
-                                                point_budget=point_budget,
-                                                point=point,
-                                                max_earn_count=max_earn_count,
+                                                planed_people=int(planed_people),
+                                                point_budget=int(point_budget),
+                                                point=int(point),
+                                                max_earn_count=int(max_earn_count),
                                                 )
 
 
@@ -195,22 +196,24 @@ class JoinActivityCommand(ActivityCommandBase):
         partici_name = GLOBAL_CONTACTS.wxid2wxname(partici_id)
         partici_real_name = self._extract_from_pattern(content=msg.content, pattern=self.JOINED_REAL_NAME_PATTERN)
         content = str(msg.content).replace(self.command_head, "").lstrip()
+        comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN, is_optional=True)
         return ClubActivityManager.new_participates(title=title,
                                                     partici_id=partici_id,  # TODO can be removed
                                                     partici_name=partici_name,  # TODO can be removed
                                                     partici_real_name=partici_real_name,
                                                     content=content,
+                                                    comments=comments
                                                     )
 
 
 class BonusCommandBase(CommandBase):
     CLUB_NAME_PATTERN = r"俱乐部群名.*\[(.*)\]"
     TARGET_REAL_NAME_PATTERN = r"姓名.*\[(.*)\]"  # multiply query target supported
-    POINTS_INCREASE_PATTERN = r"积分.*\[+\d+\]"
-    POINTS_DECREASE_PATTERN = r"积分.*\[-\d+\]"
-    POINTS_SET_TO_PATTERN = r"积分.*\[=\d+\]"
-    POINTS_OPERATION_PATTERN = r"积分.*\[\d+\]"
-    COMMENTS_PATTERN = r"备注.*\[=(.*)\]"
+    POINTS_INCREASE_PATTERN = r"积分.*\[(+\d+)\]"
+    POINTS_DECREASE_PATTERN = r"积分.*\[(-\d+)\]"
+    POINTS_SET_TO_PATTERN = r"积分.*\[(=\d+)\]"
+    POINTS_OPERATION_PATTERN = r"积分.*\[(\d+)\]"
+    COMMENTS_PATTERN = r"备注.*\[(.*)\]"
 
     def __init__(self):
         super().__init__()

@@ -48,6 +48,7 @@ class ClubActivityFlow(Base):
     activity_point_earned = Column(Integer)
     bonus_point_flow_id = Column(Integer)
     activity_flow_creat_date = Column(DateTime)
+    join_comments = Column(String(1024 * 100))
 
     activity = relationship("ClubActivity", backref="ClubActivityFlow")
 

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import PluginClub.DataBase.const_var as const_var
 from PluginClub.DataBase.club_activity import ClubActivityManager, BonusManager, CommandHelper
-from WeChatCore.wechat_bot import GLOBAL_CONTACTS, GLOBAL_ROOMS
+from WeChatCore.wechat_bot import GLOBAL_CONTACTS, GLOBAL_ROOMS, GLOBAL_WCF
 from WeChatCore.wechat_message import WeChatMessage
 
 
@@ -386,45 +386,43 @@ class HelpCommand(CommandBase):
 
 if __name__ == "__main__":
     ...
-#     import PluginClub.DataBase.club_db as db
-#     import wcferry
-#
-#     db.table.create_tables()
-#     wcf = wcferry.Wcf()
-#     GLOBAL_ROOMS = WeChatRooms(wcf=wcf)
-#     GLOBAL_CONTACTS = WeChatContacts(wcf=wcf)
-#
-#     msg = WeChatMessage(msg=wcferry.wcf_pb2.WxMsg())
-#     msg.roomid = "44@chatroom"
-#     msg.content="""
-#     .发起活动
-#     活动名称: [测试活动1]
-#     活动开始时间: [2023-08-08]
-#     活动结束时间: [2023-08-11]
-#     任意内容
-#     """
-#     msg.sender = "wx"
-#     print(NewActivityCommand().is_command(msg))
-#     result = NewActivityCommand().parse_command(msg)
-#
-#     msg.content="""
-#     .更新活动
-#     活动名称: [测试活动1]
-#     活动开始时间: [2023-08-08]
-#     活动结束时间: [2023-08-13]
-#     任意内容111
-#     """
-#     if UpdateActivityCommand().is_command(msg):
-#         result = UpdateActivityCommand().parse_command(msg)
-#     msg.content="""
-#     .打卡
-#     活动名称: [测试活动1]
-#     活动开始时间: [2023-08-08]
-#     活动结束时间: [2023-08-13]
-#     任意内容111
-#     """
-#     if JoinActivityCommand().is_command(msg):
-#         result = JoinActivityCommand().parse_command(msg)
-#         ...
-#     ...
-#
+    import PluginClub.DataBase.club_db as db
+    import wcferry
+
+    db.table.create_tables()
+    wcf = GLOBAL_WCF
+
+    msg = WeChatMessage(msg=wcferry.wcf_pb2.WxMsg())
+    msg.roomid = "44@chatroom"
+    msg.content="""
+    .发起活动
+    活动名称: [测试活动1]
+    活动开始时间: [2023-08-08]
+    活动结束时间: [2023-08-11]
+    任意内容
+    """
+    msg.sender = "wx"
+    print(NewActivityCommand().is_command(msg))
+    result = NewActivityCommand().parse_command(msg)
+
+    msg.content="""
+    .更新活动
+    活动名称: [测试活动1]
+    活动开始时间: [2023-08-08]
+    活动结束时间: [2023-08-13]
+    任意内容111
+    """
+    if UpdateActivityCommand().is_command(msg):
+        result = UpdateActivityCommand().parse_command(msg)
+    msg.content="""
+    .打卡
+    活动名称: [测试活动1]
+    活动开始时间: [2023-08-08]
+    活动结束时间: [2023-08-13]
+    任意内容111
+    """
+    if JoinActivityCommand().is_command(msg):
+        result = JoinActivityCommand().parse_command(msg)
+        ...
+    ...
+ #

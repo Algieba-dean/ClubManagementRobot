@@ -1,7 +1,8 @@
 from wcferry import Wcf
 
 from PluginClub.club_command import CommandRules, \
-    NewActivityCommand, UpdateActivityCommand, JoinActivityCommand, CheckActivityCommand
+    NewActivityCommand, UpdateActivityCommand, JoinActivityCommand, CheckActivityCommand, HelpCommand,\
+    OperateBonus,ConsumeBonus,DonateBonus,QueryBonusBalance,QueryBonusFlow,QueryBonusAll,QueryBalanceAll
 from PluginClub.club_plugin_config import club_config
 from WeChatCore.wechat_bot import GLOBAL_WCF, GLOBAL_CONTACTS
 from WeChatCore.wechat_message import WeChatMessage
@@ -11,6 +12,14 @@ command_list = [
     UpdateActivityCommand(),
     JoinActivityCommand(),
     CheckActivityCommand(),
+    HelpCommand(),
+    OperateBonus(),
+    ConsumeBonus(),
+    DonateBonus(),
+    QueryBonusBalance(),
+    QueryBonusFlow(),
+    QueryBonusAll(),
+    QueryBalanceAll(),
 ]
 
 

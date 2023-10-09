@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import PluginClub.DataBase.club_db as db
-import const_var
+from PluginClub.DataBase  import const_var
 
 
 class CommandHelper:

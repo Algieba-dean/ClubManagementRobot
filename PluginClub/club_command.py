@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 import PluginClub.DataBase.const_var as const_var
-from PluginClub.DataBase.club_activity import ClubActivityManager, BonusManager
+from PluginClub.DataBase.club_activity import ClubActivityManager, BonusManager, CommandHelper
 from WeChatCore.wechat_bot import GLOBAL_CONTACTS, GLOBAL_ROOMS
 from WeChatCore.wechat_message import WeChatMessage
 
@@ -65,7 +65,7 @@ class ActivityCommandBase(CommandBase):
     PLANED_PEOPLE_PATTERN = r"活动人数限制.*\[(.*)\]"
     POINT_BUDGET_PATTERN = r"活动积分预算.*\[(.*)\]"
     POINT_PATTERN = r"单次参与/打卡积分奖励.*\[(.*)\]"
-    MAX_EARN_COUNT = r"最大积分打卡次数.*\[(.*)\]"
+    MAX_EARN_COUNT = r"最大积分打卡次数.*\[(.*)\]" # TODO 这个参数的理解好像有问题
 
     # activity participant
     JOINED_REAL_NAME_PATTERN = r"参与人.*\[(.*)\]"
@@ -175,7 +175,10 @@ class CheckActivityCommand(ActivityCommandBase):
 
     def parse_command(self, msg: WeChatMessage):
         title = self._extract_from_pattern(content=msg.content, pattern=self.TITLE_PATTERN)
-        flag = 0x01 if msg.from_group() else 0x07  # in group show only name, direct show all
+        flag = const_var.SHOW_ACTIVITY_STATUS_NAME if msg.from_group() \
+            else const_var.SHOW_ACTIVITY_STATUS_NAME\
+                 +const_var.SHOW_ACTIVITY_STATUS_DATE\
+                 +const_var.SHOW_ACTIVITY_STATUS_CONTENT  # in group show only name, direct show all
         return ClubActivityManager.show_activity_status(title=title, show_flag=flag)
 
 
@@ -377,48 +380,8 @@ class HelpCommand(CommandBase):
                             CommandRules.DIRECT_MESSAGE_ALLOW
 
     def parse_command(self, msg: WeChatMessage):
-        result_content = ""
         command = self._extract_from_pattern(content=msg.content, pattern=self.COMMAND_PATTERN, is_optional=True)
-        if command == const_var.DEFAULT_ACTIVITY_PARAS:
-            result_content += "\n可用命令如下:\n" \
-                              ".发起活动       -- 用于管理员发起活动\n" \
-                              ".更新活动       -- 用于管理员更改活动信息\n" \
-                              ".活动状态       -- 用于查看活动参与情况\n" \
-                              ".打卡          -- 用于参与活动\n" \
-                              ".操作积分       -- 用于管理员操作积分\n" \
-                              ".消费积分       -- 用于消费积累的积分\n" \
-                              ".捐献积分       -- 用于捐赠积分到COMMON用户\n" \
-                              ".查询积分余额    -- 用于查询指定用户的积分余额\n" \
-                              ".查询积分流水    -- 用于查询指定用户的积分流水\n" \
-                              ".查询积分总榜    -- 用于查询累计获得积分的积分榜\n" \
-                              ".查询余额总榜    -- 用于查询积分余额的积分榜\n" \
-                              "\n" \
-                              "可按照如下格式进行各个命令的详细使用帮助查询" \
-                              "\n.帮助" \
-                              "\n命令名: [命令]"
-            return result_content
-        if command == ".发起活动":
-            return result_content
-        if command == ".更新活动":
-            return result_content
-        if command == "活动状态":
-            return result_content
-        if command == "打卡":
-            return result_content
-        if command == ".操作积分":
-            return result_content
-        if command == ".消费积分":
-            return result_content
-        if command == ".捐献积分":
-            return result_content
-        if command == ".查询积分余额":
-            return result_content
-        if command == ".查询积分流水":
-            return result_content
-        if command == ".查询积分总榜":
-            return result_content
-        if command == ".查询余额总榜":
-            return result_content
+        return CommandHelper.get_help_message(command=command)
 
 
 if __name__ == "__main__":

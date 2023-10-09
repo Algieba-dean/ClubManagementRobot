@@ -40,11 +40,11 @@ class CommandHelper:
                                   "\n\t活动开始时间: [2023-08-01] (必需参数, 日期格式按照范例即可,从当日0点1分1秒开始生效)" \
                                   "\n\t活动结束时间: [2023-08-30] (必需参数, 日期格式按照范例即可,截止当日23点59分59秒失效)" \
                                   "\n\t活动地点: [线上] (可选参数,可为任意内容) " \
-                                  "\n\t活动人数限制: [30] (可选参数,非负整数类型,若活动设置积分,则必需配置该项," \
+                                  "\n\t活动人数限制: [30] (可选参数,非负整数类型" \
                                   "不设置积分时也可设置该参数)" \
-                                  "\n\t活动积分预算: [300] (可选参数,非负整数类型,若活动设置其他积分配置,则必需配置该项)" \
+                                  "\n\t活动积分预算: [300] (可选参数,非负整数类型)" \
                                   "\n\t单次参与/打卡积分奖励: [1] (可选参数, 非负整数类型, 若活动设置其他积分配置,则必需配置该项)" \
-                                  "\n\t最大积分打卡次数: [10] (可选参数,若活动设置其他积分配置,则必需配置该项)" \
+                                  "\n\t最大积分打卡次数: [10] (可选参数)" \
                                   "\n\t活动描述: [XXX俱乐部XXX活动,有积分,打卡制,打卡内容限制XXXX等] (可选参数,可为任意内容, " \
                                   "作为活动说明的补充以补充其他活动相关信息)" \
                                   "\n\n]" \
@@ -691,12 +691,12 @@ class ClubActivityManager:
                 error_message = f"{title} activity already existed, please consider update it"
                 raise Exception(error_message)
             # bonus setting should be synced
-            if point + max_earn_count + point_budget != 3 * const_var.DEFAULT_ACTIVITY_PARAS \
-                    and point + max_earn_count + point_budget < 0:
-                # != 3* defaults means, not all default
-                # < 0 means any of them set  to default
-                error_message = f"{title} activity points set error, please check again."
-                raise Exception(error_message)
+            # if point + max_earn_count + point_budget != 3 * const_var.DEFAULT_ACTIVITY_PARAS \
+            #         and point + max_earn_count + point_budget < 0:
+            #     # != 3* defaults means, not all default
+            #     # < 0 means any of them set  to default
+            #     error_message = f"{title} activity points set error, please check again."
+            #     raise Exception(error_message)
             # if didn't exist
             activity = db.ClubActivity(
                 club_room_id=room_id,
@@ -865,14 +865,13 @@ class ClubActivityManager:
             ## according title to check if we need to update bonus
             ## check if bonus set in this activity
             if activity.activity_point == const_var.DEFAULT_ACTIVITY_PARAS \
-                    and activity.activity_max_count == const_var.DEFAULT_ACTIVITY_PARAS \
-                    and activity.activity_point_budget == const_var.DEFAULT_ACTIVITY_PARAS \
                     :
                 db.table.session.commit()
                 return result_content
 
             ## if no more budget
-            if activity.activity_consumed_budget + activity.activity_point > activity.activity_point_budget:
+            if activity.activity_point_budget != const_var.DEFAULT_ACTIVITY_PARAS \
+                    and activity.activity_consumed_budget + activity.activity_point > activity.activity_point_budget:
                 db.table.session.commit()
                 result_content += f" \n [No more points budget, can't increase your points]" \
                                   f" \n Activity points budget: {activity.activity_point_budget} " \
@@ -887,7 +886,8 @@ class ClubActivityManager:
                 .filter(db.ClubActivityFlow.activity_participates_real_name == partici_real_name) \
                 .order_by(db.ClubActivityFlow.activity_flow_id.desc()) \
                 .first()
-            if all_previous_earned + activity.activity_point > activity.activity_max_count * activity.activity_point:
+            if activity.activity_max_count != const_var.DEFAULT_ACTIVITY_PARAS\
+                    and all_previous_earned + activity.activity_point > activity.activity_max_count * activity.activity_point:
                 current_flow.activity_point_earned = all_previous_earned
                 result_content += f" \n [Already reached max points in current activity] " \
                                   f" \n [Max]: {activity.activity_max_count * activity.activity_point} " \

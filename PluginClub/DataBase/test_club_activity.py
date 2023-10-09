@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import PluginClub.DataBase.club_db as db
-from club_activity import ClubActivityManager, BonusManager
+from club_activity import ClubActivityManager, BonusManager, CommandHelper
 
 # activity test
 test_room_id = "123@chatroom"
@@ -341,13 +341,26 @@ def test_query_balance_all():
     ...
 
 
+def test_helper_overview():
+    result = CommandHelper.get_help_message()
+    print(result)
+
+
+def test_helper_detail():
+    # result = CommandHelper.get_help_message(".发起活动")
+    # print(result)
+    result = CommandHelper.get_help_message(".捐献积分")
+    print(result)
+    ...
+
+
 if __name__ == "__main__":
     ...
 
     # test_new_activity_success()
     # test_update_activity_success()
     # test_join_activity_success()
-    test_join_activity_no_seats()
+    # test_join_activity_no_seats()
     # test_no_point_budget()
     # test_beyond_max_per_person()
 
@@ -359,3 +372,5 @@ if __name__ == "__main__":
     # test_query_bonus_points_flow()
     # test_query_bonus_points_all()
     # test_query_balance_all()
+    test_helper_overview()
+    test_helper_detail()

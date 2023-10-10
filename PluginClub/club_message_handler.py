@@ -3,6 +3,7 @@ from wcferry import Wcf
 from PluginClub.club_command import CommandRules, \
     NewActivityCommand, UpdateActivityCommand, JoinActivityCommand, CheckActivityCommand, HelpCommand,\
     OperateBonus,ConsumeBonus,DonateBonus,QueryBonusBalance,QueryBonusFlow,QueryBonusAll,QueryBalanceAll
+from PluginClub.DataBase.club_activity import OutputMessageIterator
 from PluginClub.club_plugin_config import club_config
 from WeChatCore.wechat_bot import GLOBAL_WCF, GLOBAL_CONTACTS
 from WeChatCore.wechat_message import WeChatMessage
@@ -43,8 +44,9 @@ class ClubMessageHandler:
                     not club_config.is_account_manager(room_id=room_id, wxid=sender_id):
                 continue
             try:
-                new_message = command.parse_command(msg)
-                GLOBAL_WCF.send_text(msg=f"@{GLOBAL_CONTACTS.wxid2wxname(sender_id)}\n{new_message}", receiver=room_id,
+                output_iterator = command.parse_command(msg)
+                for new_message in output_iterator:
+                    GLOBAL_WCF.send_text(msg=f"{new_message}", receiver=room_id,
                                      aters=sender_id)
                 return
             except Exception as e:
@@ -68,8 +70,9 @@ class ClubMessageHandler:
                     not club_config.is_one_of_managers(wxid=sender_id):
                 continue
             try:
-                new_message = command.parse_command(msg)
-                GLOBAL_WCF.send_text(msg=new_message, receiver=sender_id)
+                output_iterator = command.parse_command(msg)
+                for new_message in output_iterator:
+                    GLOBAL_WCF.send_text(msg=new_message, receiver=sender_id)
                 return
             except Exception as e:
                 new_message = str(e)

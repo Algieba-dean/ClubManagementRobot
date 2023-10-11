@@ -20,6 +20,7 @@ def main():
     main_handler = WeChatMessageHandler()
     main_handler.register_direct_message_handler(ClubMessageHandler.on_direct_message)
     main_handler.register_normal_group_message_handler(ClubMessageHandler.on_group_message)
+    main_handler.register_friends_invitation_handler(ClubMessageHandler.on_friends_invitation)
 
     bot = WechatBot(wcf=GLOBAL_WCF, handler=main_handler)
     bot.LOG.info("Bot Is Running")

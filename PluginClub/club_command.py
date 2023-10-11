@@ -209,7 +209,7 @@ class JoinActivityCommand(ActivityCommandBase):
 class BonusCommandBase(CommandBase):
     CLUB_NAME_PATTERN = r"俱乐部群名.*\[(.*)\]"
     TARGET_REAL_NAME_PATTERN = r"姓名.*\[(.*)\]"  # multiply query target supported
-    POINTS_INCREASE_PATTERN = r"积分.*\[(+\d+)\]"
+    POINTS_INCREASE_PATTERN = r"积分.*\[(\+\d+)\]"
     POINTS_DECREASE_PATTERN = r"积分.*\[(-\d+)\]"
     POINTS_SET_TO_PATTERN = r"积分.*\[(=\d+)\]"
     POINTS_OPERATION_PATTERN = r"积分.*\[(\d+)\]"
@@ -231,12 +231,12 @@ class OperateBonus(BonusCommandBase):
 
         club_name = self._extract_from_pattern(content=msg.content, pattern=self.CLUB_NAME_PATTERN)
         increased_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_INCREASE_PATTERN,
-                                                      is_optional=True).replace("+", "")
+                                                      is_optional=True)
         decreased_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_DECREASE_PATTERN,
-                                                      is_optional=True).replace("-", "")
+                                                      is_optional=True)
 
         set_to_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_SET_TO_PATTERN,
-                                                   is_optional=True).replace("=", "")
+                                                   is_optional=True)
         comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN,
                                               is_optional=True)
         comments = "" if comments == const_var.DEFAULT_ACTIVITY_PARAS else comments

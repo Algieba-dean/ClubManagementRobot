@@ -147,7 +147,10 @@ class WeChatContacts(WeChatContactsBase):
         return self.__contacts
 
     def wxid2wxname(self, wxid: str):
-        return self.__wxid2wxname[wxid]
+        try:
+            return self.__wxid2wxname[wxid]
+        except Exception as e:
+            return f"Can't find wxname for {wxid}"
 
     def update_contacts(self):
         """

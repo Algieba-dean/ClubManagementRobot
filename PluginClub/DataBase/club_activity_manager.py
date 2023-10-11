@@ -85,13 +85,16 @@ class ClubActivityManager:
             db.table.session.commit()
             output_message = f"发起活动[{title}]成功,如需打卡请参考以下命令"
             output.add_new_message(output_message)
-            example_message = CommandHelper.get_new_participants_details()
+            example_message = CommandHelper.get_new_participants_example() \
+                .replace(const_var.HELPER_ACTIVITY_NAME,title)
+            output.add_new_message(example_message)
             return output
         except Exception as e:
             output = OutputMessageIterator()
             error_message = f"发起活动时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_new_activity_example()
+            example_message = CommandHelper.get_new_activity_example() \
+                .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output
 
@@ -168,7 +171,8 @@ class ClubActivityManager:
             output = OutputMessageIterator()
             error_message = f"更新活动时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_update_activity_example()
+            example_message = CommandHelper.get_update_activity_example() \
+                .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output
 
@@ -309,7 +313,8 @@ class ClubActivityManager:
             output = OutputMessageIterator()
             error_message = f"打卡时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_new_participants_example()
+            example_message = CommandHelper.get_new_participants_example()\
+                .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output
 
@@ -348,6 +353,7 @@ class ClubActivityManager:
             output = OutputMessageIterator()
             error_message = f"查询活动状态时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_check_activity_status_example()
+            example_message = CommandHelper.get_check_activity_status_example()\
+            .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output

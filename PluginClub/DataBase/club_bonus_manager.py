@@ -188,7 +188,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"操作积分时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_operate_points_example()
+            example_message = CommandHelper.get_operate_points_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -231,7 +232,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"消费积分时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_consume_points_example()
+            example_message = CommandHelper.get_consume_points_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -289,7 +291,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"捐献积分时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_donate_points_example()
+            example_message = CommandHelper.get_donate_points_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -308,7 +311,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"查询积分余额时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_query_points_balance_example()
+            example_message = CommandHelper.get_query_points_balance_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -324,7 +328,7 @@ class BonusManager:
                 .order_by(db.BonusPointFlow.bonus_flow_id.desc()) \
                 .all()
             if len(existed_flows) <= 0:
-                error_message = f"\n在俱乐部群[{club_member_real_name}]积分记录中用户[{club_name}]无积分流水记录"
+                error_message = f"\n在俱乐部群[{club_name}]积分记录中用户[{club_member_real_name}]无积分流水记录"
                 raise Exception(error_message)
             output_message += f"<积分流水>" \
                               f"\n用户名: [{club_member_real_name}]" \
@@ -355,7 +359,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"查询积分流水时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_query_points_flow_example()
+            example_message = CommandHelper.get_query_points_flow_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -393,7 +398,8 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"查询积分总榜时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_query_points_all_example()
+            example_message = CommandHelper.get_query_points_all_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output
 
@@ -416,7 +422,7 @@ class BonusManager:
             for bonus in all_bonus:
                 count += 1
                 output_message += f"\n#{count} 用户[{bonus.club_member_real_name}] " \
-                                 f"积分余额: [{bonus.bonus_points_balance}]"
+                                  f"积分余额: [{bonus.bonus_points_balance}]"
                 if count % output_counts_per_message == 0:
                     output.add_new_message(output_message)
                     output_message = ""
@@ -429,6 +435,7 @@ class BonusManager:
             output = OutputMessageIterator()
             error_message = f"查询积分余额榜时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_query_balance_all_example()
+            example_message = CommandHelper.get_query_balance_all_example() \
+                .replace(const_var.HELPER_CLUB_GROUP_NAME, club_name)
             output.add_new_message(example_message)
             return output

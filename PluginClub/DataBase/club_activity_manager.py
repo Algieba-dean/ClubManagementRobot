@@ -128,26 +128,32 @@ class ClubActivityManager:
             output_message = ""
             activity = ClubActivityManager.get_activity(title)
 
-            if description is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if description is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and description != activity.activity_description :
                 output_message += f"活动描述更新为: [{description}]"
                 activity.activity_description = description
-            if planed_people is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if planed_people is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and planed_people != activity.activity_planed_people:
                 output_message += f"\n活动人数限制从" \
                                   f"[{activity.activity_planed_people}]更新为[{planed_people}]"
                 activity.activity_planed_people = planed_people
-            if place is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if place is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and place != activity.activity_place :
                 output_message += f"\n活动地点从" \
-                                  f"{activity.activity_place}更新为[{place}]"
+                                  f"[{activity.activity_place}]更新为[{place}]"
                 activity.activity_place = place
-            if point_budget is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if point_budget is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and activity.activity_point_budget != point_budget:
                 output_message += f"\n活动积分预算从" \
                                   f"[{activity.activity_point_budget}]更新为[{point_budget}]"
                 activity.activity_point_budget = point_budget
-            if point is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if point is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and activity.activity_point != point:
                 output_message += f"\n单次参与/打卡积分奖励从" \
                                   f"[{activity.activity_point}]更新为[{point}]"
                 activity.activity_point = point
-            if max_earn_count is not const_var.DEFAULT_ACTIVITY_PARAS:
+            if max_earn_count is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and max_earn_count != activity.activity_max_count:
                 output_message += f"\n最大积分打卡次数从" \
                                   f"[{activity.activity_max_count}]更新为[{max_earn_count}]"
                 activity.activity_max_count = max_earn_count
@@ -336,7 +342,7 @@ class ClubActivityManager:
                 error_message = f"活动流水 [{title}] 不存在"
                 raise Exception(error_message)
             result = f"\n活动名称:{title}"
-            output.add_new_message(output)
+            output.add_new_message(result)
             count = 0
             for flow in existed:
                 count += 1

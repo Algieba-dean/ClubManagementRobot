@@ -77,12 +77,16 @@ class ActivityCommandBase(CommandBase):
     def _parse_activity_start_datetime(self, string: str, is_optional=False):
         start_date_str = self._extract_from_pattern(content=string, pattern=self.START_DATE_PATTERN,
                                                     is_optional=is_optional)
+        if start_date_str == const_var.DEFAULT_ACTIVITY_PARAS:
+            return start_date_str
         return self._parse_date_str(start_date_str)
 
     def _parse_activity_end_datetime(self, string: str, is_optional=False):
-        start_date_str = self._extract_from_pattern(content=string, pattern=self.END_DATE_PATTERN,
+        end_date_str = self._extract_from_pattern(content=string, pattern=self.END_DATE_PATTERN,
                                                     is_optional=is_optional)
-        end_date = self._parse_date_str(start_date_str)
+        if end_date_str == const_var.DEFAULT_ACTIVITY_PARAS:
+            return end_date_str
+        end_date = self._parse_date_str(end_date_str)
         end_date = datetime(year=end_date.year, month=end_date.month, day=end_date.day,
                             hour=23, minute=59, second=59)
         return end_date

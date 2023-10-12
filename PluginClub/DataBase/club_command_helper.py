@@ -140,7 +140,8 @@ class CommandHelper:
                          "\n]" \
                          "\n\n参数介绍: [" \
                          "\n\t活动名称: [XXX俱乐部_X月XX活动A] (必需参数,待参与的活动名称)" \
-                         "\n\t参与人: [aaa.bbb] (必需参数,\n\n‼成员的唯一标识,参与人的邮箱前缀,即@前的部分 如abc012.zzz@defg.com‼)" \
+                         "\n\t参与人: [aaa.bbb] (必需参数,\n\n‼成员的唯一标识,参与人的邮箱前缀,即@前的部分 如abc012.zzz@defg.com," \
+                         "则参与人为: abc012.zzz‼)" \
                          "\n\t备注: [打卡内容] (必需参数,可为任意内容，打卡内容)" \
                          "\n\n]"
         return output_message

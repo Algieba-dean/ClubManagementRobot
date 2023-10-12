@@ -8,7 +8,7 @@ from PluginClub.DataBase.club_utils import OutputMessageIterator
 
 class BonusManager:
     @staticmethod
-    def get_bonus_account(club_name, club_member_real_name):
+    def get_bonus_account(club_name, club_member_real_name, create_account_if_new=True):
         """
         # return bonus account query result, if no bonus account, will create one.
         :param club_name:
@@ -18,6 +18,9 @@ class BonusManager:
         existed_bonus = db.table.session.query(db.BonusPoint).filter(db.BonusPoint.club_room_name == club_name). \
             filter(db.BonusPoint.club_member_real_name == club_member_real_name).all()
         if len(existed_bonus) <= 0:
+            if not create_account_if_new:
+                error_message = f"在俱乐部群[{club_name}]积分记录中，不存在用户[{club_member_real_name}]"
+                raise Exception("")
             new_bonus = db.BonusPoint(
                 club_room_name=club_name,
                 club_member_real_name=club_member_real_name,
@@ -85,6 +88,7 @@ class BonusManager:
             bonus_account.total_points += point_after_operation - previous_point
 
         db.table.session.commit()
+
 
     @staticmethod
     def operate_bonus_points(club_name: str,
@@ -301,7 +305,9 @@ class BonusManager:
         try:
             output_message = ""
             output = OutputMessageIterator()
-            balance = BonusManager.get_bonus_account(club_name=club_name, club_member_real_name=club_member_real_name) \
+            balance = BonusManager.get_bonus_account(club_name=club_name,
+                                                     club_member_real_name=club_member_real_name,
+                                                     create_account_if_new=False) \
                 .bonus_points_balance
             output_message += f"在俱乐部群[{club_name}]积分记录中,用户[{club_member_real_name}]积分余额为[{balance}]"
             output.add_new_message(output_message)

@@ -280,7 +280,7 @@ class ClubActivityManager:
                 current_flow.activity_point_earned = all_previous_earned
                 output_message = f" \n 已达到本次活动最大可获得积分的打卡次数上限, 本次打卡不增加积分" \
                                  f" \n 最大积分次数: {activity.activity_max_count} " \
-                                 f" \n 已获得积分的打卡次数: {all_previous_earned / activity.activity_point}"
+                                 f" \n 已获得积分的打卡次数: {int(all_previous_earned / activity.activity_point)}"
                 db.table.session.commit()
                 output.add_new_message(output_message)
                 return output

@@ -65,6 +65,7 @@ class ActivityCommandBase(CommandBase):
     PLANED_PEOPLE_PATTERN = r"活动人数限制.*\[(.*)\]"
     POINT_BUDGET_PATTERN = r"活动积分预算.*\[(.*)\]"
     POINT_PATTERN = r"单次参与/打卡积分奖励.*\[(.*)\]"
+    POINT_EARNED_MX_COUNT_PER_DAY_PATTERN = r"单日可积分打卡次数.*\[(.*)\]"
     MAX_EARN_COUNT = r"最大积分打卡次数.*\[(.*)\]"
     COMMENTS_PATTERN = r"备注.*\[(.*)\]"
 
@@ -118,6 +119,9 @@ class NewActivityCommand(ActivityCommandBase):
                                                   is_optional=True)
         point = self._extract_from_pattern(content=msg.content, pattern=self.POINT_PATTERN, is_optional=True)
         max_earn_count = self._extract_from_pattern(content=msg.content, pattern=self.MAX_EARN_COUNT, is_optional=True)
+        point_join_max_count_per_day = self._extract_from_pattern(content=msg.content,
+                                                                  pattern=self.POINT_EARNED_MX_COUNT_PER_DAY_PATTERN,
+                                                                  is_optional=True)
 
         return ClubActivityManager.new_activity(room_id=room_id,
                                                 room_name=room_name,
@@ -133,6 +137,7 @@ class NewActivityCommand(ActivityCommandBase):
                                                 point_budget=int(point_budget),
                                                 point=int(point),
                                                 max_earn_count=int(max_earn_count),
+                                                point_join_max_count_per_day = point_join_max_count_per_day,
                                                 )
 
 

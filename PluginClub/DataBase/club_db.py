@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine, Boolean
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 
 Base = declarative_base()
@@ -28,6 +28,7 @@ class ClubActivity(Base):
     activity_end_date = Column(DateTime)  # activity end date
 
     activity_place = Column(String(512))  # online or other place, default is empty
+    activity_day_point_join_count = Column(Integer) # max with-point join count in a day
     activity_planed_people = Column(Integer)  # planed how many people can join in
     activity_candidates = Column(Integer)  # already registered candidates
     activity_candidates_name = Column(String(1024 * 100))  # already registered candidates
@@ -45,7 +46,8 @@ class ClubActivityFlow(Base):
     activity_participates_id = Column(String(1024))
     activity_participates_name = Column(String(1024))
     activity_participates_real_name = Column(String(1024))
-    activity_point_earned = Column(Integer)
+    activity_point_earned = Column(Integer) # this is for all earned in this activity
+    this_time_earned_point = Column(Integer) # this is for this flow
     bonus_point_flow_id = Column(Integer)
     activity_flow_creat_date = Column(DateTime)
     join_comments = Column(String(1024 * 100))

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,date
 
 import PluginClub.DataBase.club_db as db
 from PluginClub.DataBase import const_var
@@ -27,6 +27,7 @@ class ClubActivityManager:
                      organizer_id, organizer_name,
                      place, planed_people,
                      point_budget, point, max_earn_count,
+                     point_join_max_count_per_day,
                      start_date, end_date):
         """
         PS: All default value handled by previous layer
@@ -75,6 +76,7 @@ class ClubActivityManager:
                 activity_point_budget=point_budget,
                 activity_point=point,
                 activity_max_count=max_earn_count,
+                activity_day_point_join_count=point_join_max_count_per_day,
                 activity_start_date=start_date,
                 activity_end_date=end_date,
                 activity_candidates=0,
@@ -86,7 +88,7 @@ class ClubActivityManager:
             output_message = f"发起活动[{title}]成功,如需打卡请参考以下命令"
             output.add_new_message(output_message)
             example_message = CommandHelper.get_new_participants_example() \
-                .replace(const_var.HELPER_ACTIVITY_NAME,title)
+                .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output
         except Exception as e:
@@ -106,6 +108,7 @@ class ClubActivityManager:
                         point_budget=const_var.DEFAULT_ACTIVITY_PARAS,
                         point=const_var.DEFAULT_ACTIVITY_PARAS,
                         max_earn_count=const_var.DEFAULT_ACTIVITY_PARAS,
+                        point_join_max_count_per_day=const_var.DEFAULT_ACTIVITY_PARAS,
                         start_date=const_var.DEFAULT_ACTIVITY_PARAS,
                         end_date=const_var.DEFAULT_ACTIVITY_PARAS,
                         ):
@@ -129,7 +132,7 @@ class ClubActivityManager:
             activity = ClubActivityManager.get_activity(title)
 
             if description is not const_var.DEFAULT_ACTIVITY_PARAS \
-                    and description != activity.activity_description :
+                    and description != activity.activity_description:
                 output_message += f"活动描述更新为: [{description}]"
                 activity.activity_description = description
             if planed_people is not const_var.DEFAULT_ACTIVITY_PARAS \
@@ -138,7 +141,7 @@ class ClubActivityManager:
                                   f"[{activity.activity_planed_people}]更新为[{planed_people}]"
                 activity.activity_planed_people = planed_people
             if place is not const_var.DEFAULT_ACTIVITY_PARAS \
-                    and place != activity.activity_place :
+                    and place != activity.activity_place:
                 output_message += f"\n活动地点从" \
                                   f"[{activity.activity_place}]更新为[{place}]"
                 activity.activity_place = place
@@ -152,6 +155,11 @@ class ClubActivityManager:
                 output_message += f"\n单次参与/打卡积分奖励从" \
                                   f"[{activity.activity_point}]更新为[{point}]"
                 activity.activity_point = point
+            if point_join_max_count_per_day is not const_var.DEFAULT_ACTIVITY_PARAS \
+                    and activity.activity_day_point_join_count != point_join_max_count_per_day:
+                output_message += f"\n单日可积分打卡次数从" \
+                                  f"[{activity.activity_day_point_join_count}]更新为[{point_join_max_count_per_day}]"
+                activity.activity_day_point_join_count = point_join_max_count_per_day
             if max_earn_count is not const_var.DEFAULT_ACTIVITY_PARAS \
                     and max_earn_count != activity.activity_max_count:
                 output_message += f"\n最大积分打卡次数从" \
@@ -241,6 +249,7 @@ class ClubActivityManager:
                 activity_participates_name=partici_name,
                 activity_participates_real_name=partici_real_name,
                 activity_point_earned=all_previous_earned,
+                this_time_earned_point=0,
                 activity_flow_creat_date=datetime.now(),
                 join_comments=comments,
             )
@@ -267,6 +276,29 @@ class ClubActivityManager:
                 output.add_new_message(output_message)
                 return output
 
+            today_earned_counts = 0
+            ## if max in one day
+            if activity.activity_day_point_join_count != const_var.DEFAULT_ACTIVITY_PARAS:
+                today = date.today()
+                today_start = today.strftime("%Y-%m-%d") + " 00:00:00"
+                today_end = today.strftime("%Y-%m-%d") + " 23:59:59"
+                today_earned_flows = db.table.session.query(db.ClubActivityFlow) \
+                    .filter(db.ClubActivityFlow.activity_id == activity.activity_id) \
+                    .filter(db.ClubActivityFlow.activity_participates_real_name == partici_real_name) \
+                    .filter(db.ClubActivityFlow.activity_flow_creat_date.between(today_start,today_end)) \
+                    .filter(db.ClubActivityFlow.this_time_earned_point > 0) \
+                    .order_by(db.ClubActivityFlow.activity_flow_id.desc()) \
+                    .all()
+                # as today's flow earned point is 0, so it's fine to query after it
+                today_earned_counts = len(today_earned_flows)
+                if today_earned_counts >= activity.activity_day_point_join_count:
+                    db.table.session.commit()
+                    output_message = f" 您在该活动中已达到单日可积分打卡上限,本次打卡不增加积分" \
+                                     f" \n活动单日可积分打卡次数: {activity.activity_day_point_join_count} " \
+                                     f" \n今日已积分打卡次数: {today_earned_counts} "
+                    output.add_new_message(output_message)
+                    return output
+
             ## if already reached max earned points
 
             # PS: the last one, is current operating one, for
@@ -286,6 +318,7 @@ class ClubActivityManager:
                 return output
             # can add points
             current_flow.activity_point_earned += activity.activity_point
+            current_flow.this_time_earned_point = activity.activity_point
 
             # new bonus flow
             previous_point_balance = BonusManager.get_bonus_account(club_name=activity.club_room_name,
@@ -305,13 +338,15 @@ class ClubActivityManager:
             activity.activity_consumed_budget += activity.activity_point
             bonus_account = BonusManager.get_bonus_account(club_name=activity.club_room_name,
                                                            club_member_real_name=partici_real_name)
-            output_message = f"\n新增积分[{activity.activity_point}]"\
+            output_message = f"\n新增积分[{activity.activity_point}]" \
                              f"\n在俱乐部群[{activity.club_room_name}]积分账户中" \
                              f"\n用户[{partici_real_name}]累计获得的总积分为: " \
                              f"[{bonus_account.total_points}] " \
                              f"\n目前积分余额为: [{bonus_account.bonus_points_balance}]"
             if activity.activity_point_budget != const_var.DEFAULT_ACTIVITY_PARAS:
-                output_message+= f"\n目前活动剩余积分预算为[{activity.activity_point_budget -activity.activity_consumed_budget}]"
+                output_message += f"\n目前活动剩余积分预算为[{activity.activity_point_budget - activity.activity_consumed_budget}]"
+            if activity.activity_day_point_join_count != const_var.DEFAULT_ACTIVITY_PARAS:
+                output_message += f"\n今日活动可积分打卡次数剩余[{activity.activity_day_point_join_count - today_earned_counts -1}]"
             output.add_new_message(output_message)
             db.table.session.commit()
             return output
@@ -319,7 +354,7 @@ class ClubActivityManager:
             output = OutputMessageIterator()
             error_message = f"打卡时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_new_participants_example()\
+            example_message = CommandHelper.get_new_participants_example() \
                 .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output
@@ -359,7 +394,7 @@ class ClubActivityManager:
             output = OutputMessageIterator()
             error_message = f"查询活动状态时出现错误 :{e} \n 请参考以下示例重试."
             output.add_new_message(error_message)
-            example_message = CommandHelper.get_check_activity_status_example()\
-            .replace(const_var.HELPER_ACTIVITY_NAME, title)
+            example_message = CommandHelper.get_check_activity_status_example() \
+                .replace(const_var.HELPER_ACTIVITY_NAME, title)
             output.add_new_message(example_message)
             return output

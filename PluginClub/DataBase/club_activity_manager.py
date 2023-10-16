@@ -207,6 +207,11 @@ class ClubActivityManager:
             activity = ClubActivityManager.get_activity(title)
 
             activity_id = activity.activity_id
+            # check if activity started
+            activity_start_date = activity.activity_start_date
+            if datetime.now() < activity_start_date:
+                error_message = f"活动[{title}]将于[{activity_start_date}]开始，请在活动开始后进行再次进行参与"
+                raise Exception(error_message)
             # get end datetime from title
             activity_end_date = activity.activity_end_date
             if datetime.now() > activity_end_date:

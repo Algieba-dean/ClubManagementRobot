@@ -188,7 +188,9 @@ class CommandHelper:
                           "\n或者" \
                           "\n积分: [-20]" \
                           "\n或者" \
-                          "\n积分: [=30]"
+                          "\n积分: [30]" \
+                          "\n或者" \
+                          "\n积分: [30 20 10]"
         return example_message
 
     @staticmethod

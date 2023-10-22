@@ -234,8 +234,8 @@ def test_operate_points():
                                                    operator_id=test_operator_id,
                                                    operator_name=test_operator_id,
                                                    operator_real_name=test_operator_real_name,
-                                                   target_real_names=test_target_name,
-                                                   set_to_points=str(i))
+                                                   target_real_names=test_target_names,
+                                                   set_to_points=[i])
         print(result)
 
 
@@ -262,15 +262,23 @@ def test_operate_multi_user_points():
                                                    target_real_names=test_target_names,
                                                    decreased_points=decreased_points)
         print(result)
-    print("\n\n--------set to test---------")
+
+    print("\n\n--------set to same value test---------")
     for i in range(range_):
         result = BonusManager.operate_bonus_points(club_name=test_room_name,
                                                    operator_id=test_operator_id,
                                                    operator_name=test_operator_id,
                                                    operator_real_name=test_operator_real_name,
-                                                   target_real_names=test_target_names,
-                                                   set_to_points=str(i))
+                                                   target_real_names=test_target_name,
+                                                   set_to_points=[i])
         print(result)
+    print("\n\n--------set to different value test---------")
+    result = BonusManager.operate_bonus_points(club_name=test_room_name,
+                                               operator_id=test_operator_id,
+                                               operator_name=test_operator_id,
+                                               operator_real_name=["aa","bb","cc"],
+                                               target_real_names=test_target_name,
+                                               set_to_points=[2,3,4])
     ...
 
 
@@ -281,7 +289,7 @@ def test_consume_points():
                                                operator_name=test_operator_id,
                                                operator_real_name=test_operator_real_name,
                                                target_real_names=test_target_name,
-                                               set_to_points="9",
+                                               set_to_points=[9],
                                                comments="set to 9")
     for i in range(range_):
         result = BonusManager.consume_bonus_points(club_name=test_room_name,
@@ -302,7 +310,7 @@ def test_donate_points():
                                                operator_name=test_operator_id,
                                                operator_real_name=test_operator_real_name,
                                                target_real_names=test_target_name,
-                                               set_to_points="7",
+                                               set_to_points=[7],
                                                comments="Set to 7")
     for i in range(range_):
         result = BonusManager.donate_bonus_points(club_name=test_room_name,

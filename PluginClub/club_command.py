@@ -220,7 +220,7 @@ class BonusCommandBase(CommandBase):
     TARGET_REAL_NAME_PATTERN = r"姓名.*\[(.*)\]"  # multiply query target supported
     POINTS_INCREASE_PATTERN = r"积分.*\[(\+\d+)\]"
     POINTS_DECREASE_PATTERN = r"积分.*\[(-\d+)\]"
-    POINTS_SET_TO_PATTERN = r"积分.*\[(=\d+)\]"
+    POINTS_SET_TO_PATTERN = r"积分.*\[(.*)\]"
     POINTS_OPERATION_PATTERN = r"积分.*\[(\d+)\]"
     COMMENTS_PATTERN = r"备注.*\[(.*)\]"
 
@@ -244,8 +244,13 @@ class OperateBonus(BonusCommandBase):
         decreased_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_DECREASE_PATTERN,
                                                       is_optional=True)
 
-        set_to_points = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_SET_TO_PATTERN,
+        set_to_points_raw = self._extract_from_pattern(content=msg.content, pattern=self.POINTS_SET_TO_PATTERN,
                                                    is_optional=True)
+        set_to_points = list()
+        for point in str(set_to_points_raw).split(" "):
+            if point == "":
+                continue
+            set_to_points.append(int(point))
         comments = self._extract_from_pattern(content=msg.content, pattern=self.COMMENTS_PATTERN,
                                               is_optional=True)
         comments = "" if comments == const_var.DEFAULT_ACTIVITY_PARAS else comments

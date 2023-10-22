@@ -97,7 +97,7 @@ class BonusManager:
                              operator_real_name=const_var.ADMIN_BONUS_OPERATOR_REAL_NAME,
                              increased_points=const_var.DEFAULT_ACTIVITY_PARAS,
                              decreased_points=const_var.DEFAULT_ACTIVITY_PARAS,
-                             set_to_points=const_var.DEFAULT_ACTIVITY_PARAS,
+                             set_to_points: list[int] = None,
                              comments="",
                              ):
         try:
@@ -163,13 +163,17 @@ class BonusManager:
                     output.add_new_message(output_message)
                 return output
 
-            if set_to_points is not const_var.DEFAULT_ACTIVITY_PARAS:
-                set_to_points = int(set_to_points.replace("=", ""))
-                for real_name in target_real_names:
+            if set_to_points is not None:
+                if len(target_real_names) != len(set_to_points) and len(set_to_points) != 1:
+                    error_message = f"未知操作命令"
+                    raise Exception(error_message)
+                for index, real_name in enumerate(target_real_names):
+                    if len(set_to_points) == 1:
+                        index = 0
                     previous_point = BonusManager.get_bonus_account(club_name=club_name,
                                                                     club_member_real_name=real_name) \
                         .bonus_points_balance
-                    point_after_operation = set_to_points
+                    point_after_operation = set_to_points[index]
                     BonusManager.new_bonus_flow(club_room_id=club_room_id,
                                                 club_room_name=club_name,
                                                 club_member_real_name=real_name,
@@ -182,8 +186,8 @@ class BonusManager:
                                                 comments=comments,
                                                 )
                     output_message += f"\n在俱乐部群[{club_name}]积分记录中, 用户[{real_name}]" \
-                                      f"积分设定为[{set_to_points}]点 "
-                    output.add_new_message(output_message)
+                                      f"积分设定为[{set_to_points[index]}]点 "
+                output.add_new_message(output_message)
                 return output
             error_message = f"未知操作命令"
             raise Exception(error_message)
